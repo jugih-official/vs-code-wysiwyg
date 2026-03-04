@@ -63,8 +63,36 @@
       {
         "command": "xamlDesigner.openHtmlVisualEditor",
         "title": "Open with HTML Visual Designer"
+      },
+      {
+        "command": "xamlDesigner.previewHtml",
+        "title": "Preview HTML in Side Panel"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "xamlDesigner.openVisualEditor",
+          "when": "resourceExtname == .xaml || resourceExtname == .axaml",
+          "group": "navigation"
+        },
+        {
+          "command": "xamlDesigner.openRazorVisualEditor",
+          "when": "resourceExtname == .razor",
+          "group": "navigation"
+        },
+        {
+          "command": "xamlDesigner.openHtmlVisualEditor",
+          "when": "resourceExtname == .html || resourceExtname == .htm",
+          "group": "navigation"
+        },
+        {
+          "command": "xamlDesigner.previewHtml",
+          "when": "resourceExtname == .html || resourceExtname == .htm",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

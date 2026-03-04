@@ -32,11 +32,12 @@ Design UIs by dragging controls onto a canvas — no hand-editing markup require
 9. [HTML Designer](#html-designer)
    - [Available Elements](#html-available-elements)
    - [Properties Panel — HTML](#properties-panel--html)
-10. [Keyboard Shortcuts](#keyboard-shortcuts)
-11. [Toolbar Reference](#toolbar-reference)
-12. [Context Menu Reference](#context-menu-reference)
-13. [Development Guide](#development-guide)
-14. [Project Structure](#project-structure)
+10. [HTML Live Preview](#html-live-preview)
+11. [Keyboard Shortcuts](#keyboard-shortcuts)
+12. [Toolbar Reference](#toolbar-reference)
+13. [Context Menu Reference](#context-menu-reference)
+14. [Development Guide](#development-guide)
+15. [Project Structure](#project-structure)
 
 ---
 
@@ -69,6 +70,8 @@ The extension is read-write: it parses the existing markup into a visual represe
 | **Sync to source** | One-click write-back of the visual layout as formatted markup |
 | **Bi-directional sync** | External file edits update the canvas automatically |
 | **Three designer modes** | Separate, purpose-built designers for XAML, Razor, and HTML |
+| **HTML Live Preview** | Preview HTML files in a side panel inside VS Code with auto-refresh |
+| **Explorer context menu** | Right-click files in the Explorer to open directly with the designer |
 
 ---
 
@@ -151,7 +154,9 @@ For development and testing without packaging, press **F5** in VS Code with the 
 ### Opening a Designer
 
 Each designer is registered as a **Custom Editor** with `"priority": "option"`, meaning it never overrides the default text editor.  
-To open the visual designer:
+There are three ways to open the visual designer:
+
+#### 1. Open With… Button
 
 1. Open any supported file in VS Code.
 2. Click the **"Open With…"** button in the editor title bar (the split-screen icon), **or** right-click the file in the Explorer and choose **Open With…**.
@@ -160,6 +165,18 @@ To open the visual designer:
    - `Razor Visual Designer` — for `.razor` files
    - `HTML Visual Designer` — for `.html` / `.htm` files
 
+#### 2. File Explorer Context Menu
+
+Right-click any supported file in the **Explorer** file tree to see the relevant designer command directly in the context menu:
+
+- `.xaml` / `.axaml` → **Open with XAML Visual Designer**
+- `.razor` → **Open with Razor Visual Designer**
+- `.html` / `.htm` → **Open with HTML Visual Designer** and **Preview HTML in Side Panel**
+
+This allows you to open the designer without opening the file first.
+
+#### 3. Command Palette
+
 You can also run the corresponding command from the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`):
 
 | Command | Action |
@@ -167,6 +184,7 @@ You can also run the corresponding command from the Command Palette (`Ctrl+Shift
 | `Open with XAML Visual Designer` | Opens the active `.xaml`/`.axaml` file in the XAML designer |
 | `Open with Razor Visual Designer` | Opens the active `.razor` file in the Razor designer |
 | `Open with HTML Visual Designer` | Opens the active `.html`/`.htm` file in the HTML designer |
+| `Preview HTML in Side Panel` | Opens a live HTML preview beside the editor |
 
 ### Designer Layout
 
@@ -417,6 +435,28 @@ The HTML designer generates standard HTML5 markup (`.html` / `.htm`).
 
 ---
 
+## HTML Live Preview
+
+The **HTML Live Preview** feature lets you preview any `.html` or `.htm` file directly inside VS Code, in a side panel next to the editor. The preview updates automatically when the file is edited or saved.
+
+### Opening the Preview
+
+| Method | Steps |
+|--------|-------|
+| **Explorer context menu** | Right-click an `.html` / `.htm` file in the Explorer → **Preview HTML in Side Panel** |
+| **Command Palette** | Open an HTML file, then run `Preview HTML in Side Panel` from the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) |
+
+### Preview Features
+
+| Feature | Description |
+|---------|-------------|
+| **Side-by-side view** | The preview opens beside the current editor so you can edit and preview simultaneously |
+| **Auto-refresh** | The preview refreshes automatically when the source file is edited or saved |
+| **Refresh button** | Click the ↻ Refresh button in the preview toolbar to manually reload |
+| **Sandboxed rendering** | The preview runs inside a sandboxed iframe for safety |
+
+---
+
 ## Keyboard Shortcuts
 
 These shortcuts are active whenever the design canvas has focus.
@@ -508,10 +548,11 @@ The output file is `xaml-axaml-designer-<version>.vsix` in the project root.
 ```
 vs-code-wysiwyg/
 ├── src/
-│   ├── extension.ts              # Extension entry point — registers all custom editors
+│   ├── extension.ts              # Extension entry point — registers all custom editors and commands
 │   ├── xamlDesignerProvider.ts   # CustomTextEditorProvider for .xaml / .axaml
 │   ├── razorDesignerProvider.ts  # CustomTextEditorProvider for .razor
 │   ├── htmlDesignerProvider.ts   # CustomTextEditorProvider for .html / .htm
+│   ├── htmlPreviewProvider.ts    # HTML live preview panel provider
 │   ├── xamlDocument.ts           # XAML document model / parser helpers
 │   ├── webviewContent.ts         # Webview HTML + embedded JS for the XAML designer
 │   ├── razorWebviewContent.ts    # Webview HTML + embedded JS for the Razor designer

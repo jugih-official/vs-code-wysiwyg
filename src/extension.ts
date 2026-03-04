@@ -2,11 +2,13 @@ import * as vscode from 'vscode';
 import { XamlDesignerProvider } from './xamlDesignerProvider';
 import { RazorDesignerProvider } from './razorDesignerProvider';
 import { HtmlDesignerProvider } from './htmlDesignerProvider';
+import { HtmlPreviewProvider } from './htmlPreviewProvider';
 
 export function activate(context: vscode.ExtensionContext) {
     const xamlProvider = new XamlDesignerProvider(context);
     const razorProvider = new RazorDesignerProvider(context);
     const htmlProvider = new HtmlDesignerProvider(context);
+    const htmlPreviewProvider = new HtmlPreviewProvider(context);
 
     context.subscriptions.push(
         vscode.window.registerCustomEditorProvider(
@@ -42,12 +44,12 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('xamlDesigner.openVisualEditor', () => {
-            const activeEditor = vscode.window.activeTextEditor;
-            if (activeEditor) {
+        vscode.commands.registerCommand('xamlDesigner.openVisualEditor', (uri?: vscode.Uri) => {
+            const targetUri = uri || vscode.window.activeTextEditor?.document.uri;
+            if (targetUri) {
                 vscode.commands.executeCommand(
                     'vscode.openWith',
-                    activeEditor.document.uri,
+                    targetUri,
                     'xamlDesigner.visualEditor'
                 );
             }
@@ -55,12 +57,12 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('xamlDesigner.openRazorVisualEditor', () => {
-            const activeEditor = vscode.window.activeTextEditor;
-            if (activeEditor) {
+        vscode.commands.registerCommand('xamlDesigner.openRazorVisualEditor', (uri?: vscode.Uri) => {
+            const targetUri = uri || vscode.window.activeTextEditor?.document.uri;
+            if (targetUri) {
                 vscode.commands.executeCommand(
                     'vscode.openWith',
-                    activeEditor.document.uri,
+                    targetUri,
                     'xamlDesigner.razorVisualEditor'
                 );
             }
@@ -68,14 +70,23 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('xamlDesigner.openHtmlVisualEditor', () => {
-            const activeEditor = vscode.window.activeTextEditor;
-            if (activeEditor) {
+        vscode.commands.registerCommand('xamlDesigner.openHtmlVisualEditor', (uri?: vscode.Uri) => {
+            const targetUri = uri || vscode.window.activeTextEditor?.document.uri;
+            if (targetUri) {
                 vscode.commands.executeCommand(
                     'vscode.openWith',
-                    activeEditor.document.uri,
+                    targetUri,
                     'xamlDesigner.htmlVisualEditor'
                 );
+            }
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('xamlDesigner.previewHtml', (uri?: vscode.Uri) => {
+            const targetUri = uri || vscode.window.activeTextEditor?.document.uri;
+            if (targetUri) {
+                htmlPreviewProvider.openPreview(targetUri);
             }
         })
     );
