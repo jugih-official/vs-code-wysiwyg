@@ -1,7 +1,7 @@
 {
   "name": "xaml-axaml-designer",
-  "displayName": "XAML/AXAML/Razor Visual Designer",
-  "description": "WYSIWYG visual designer for .xaml, .axaml and .razor files with drag-and-drop controls and resizing",
+  "displayName": "XAML/AXAML/Razor/HTML Visual Designer",
+  "description": "WYSIWYG visual designer for .xaml, .axaml, .razor, .html and .htm files with drag-and-drop controls and resizing",
   "version": "0.1.0",
   "publisher": "local-dev",
   "engines": {
@@ -36,6 +36,19 @@
           }
         ],
         "priority": "option"
+      },
+      {
+        "viewType": "xamlDesigner.htmlVisualEditor",
+        "displayName": "HTML Visual Designer",
+        "selector": [
+          {
+            "filenamePattern": "*.html"
+          },
+          {
+            "filenamePattern": "*.htm"
+          }
+        ],
+        "priority": "option"
       }
     ],
     "commands": [
@@ -46,6 +59,10 @@
       {
         "command": "xamlDesigner.openRazorVisualEditor",
         "title": "Open with Razor Visual Designer"
+      },
+      {
+        "command": "xamlDesigner.openHtmlVisualEditor",
+        "title": "Open with HTML Visual Designer"
       }
     ]
   },
