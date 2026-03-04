@@ -375,7 +375,7 @@ body {
             <span class="icon">Hl</span> HyperlinkButton
         </div>
         <div class="toolbox-item" draggable="true" data-type="RepeatButton">
-            <span class="icon">Rp</span> RepeatButton
+            <span class="icon">Rb</span> RepeatButton
         </div>
         <div class="toolbox-item" draggable="true" data-type="ToggleButton">
             <span class="icon">Tb</span> ToggleButton
@@ -424,7 +424,7 @@ body {
             <span class="icon">Sv</span> ScrollViewer
         </div>
         <div class="toolbox-item" draggable="true" data-type="SplitView">
-            <span class="icon">Sv</span> SplitView
+            <span class="icon">Sw</span> SplitView
         </div>
         <div class="toolbox-item" draggable="true" data-type="Carousel">
             <span class="icon">Cr</span> Carousel
@@ -1571,7 +1571,7 @@ body {
         }
         for (var pi = 0; pi < propKeys.length; pi++) {
             var pk = propKeys[pi];
-            if (specificDefs && knownSpecAttrs && knownSpecAttrs[pk]) continue;
+            if (knownSpecAttrs && knownSpecAttrs[pk]) continue;
             if (knownCommonAttrs[pk]) continue;
             var extraDiv = document.createElement('div');
             extraDiv.className = 'prop-row';
