@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
-import { XamlDocument } from './xamlDocument';
-import { getWebviewContent } from './webviewContent';
+import { getRazorWebviewContent } from './razorWebviewContent';
 
-export class XamlDesignerProvider implements vscode.CustomTextEditorProvider {
+export class RazorDesignerProvider implements vscode.CustomTextEditorProvider {
     constructor(private readonly context: vscode.ExtensionContext) {}
 
     public async resolveCustomTextEditor(
@@ -14,10 +13,8 @@ export class XamlDesignerProvider implements vscode.CustomTextEditorProvider {
             enableScripts: true,
         };
 
-        const xamlDoc = new XamlDocument(document);
-
         // Set initial content
-        webviewPanel.webview.html = getWebviewContent(webviewPanel.webview, this.context);
+        webviewPanel.webview.html = getRazorWebviewContent(webviewPanel.webview, this.context);
 
         // Send the document content to webview
         const sendDocumentToWebview = () => {
@@ -45,8 +42,8 @@ export class XamlDesignerProvider implements vscode.CustomTextEditorProvider {
                 case 'ready':
                     sendDocumentToWebview();
                     break;
-                case 'updateXaml':
-                    this.updateDocument(document, message.content);
+                case 'updateRazor':
+                    this.updateDocument(document, message.content || '');
                     break;
             }
         });
