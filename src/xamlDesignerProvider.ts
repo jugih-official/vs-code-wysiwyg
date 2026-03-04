@@ -46,7 +46,7 @@ export class XamlDesignerProvider implements vscode.CustomTextEditorProvider {
                     sendDocumentToWebview();
                     break;
                 case 'updateXaml':
-                    this.updateDocument(document, message.content);
+                    this.updateDocument(document, message.content || '');
                     break;
             }
         });
