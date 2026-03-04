@@ -11,10 +11,8 @@ Design UIs by dragging controls onto a canvas — no hand-editing markup require
 2. [Features at a Glance](#features-at-a-glance)
 3. [Prerequisites](#prerequisites)
 4. [Compile & Package from Source](#compile--package-from-source)
-   - [1. Clone the Repository](#1-clone-the-repository)
-   - [2. Install Dependencies](#2-install-dependencies)
-   - [3. Compile TypeScript](#3-compile-typescript)
-   - [4. Package as VSIX](#4-package-as-vsix)
+   - [Quick Start](#quick-start)
+   - [Step-by-step Breakdown](#step-by-step-breakdown)
 5. [Install the Extension](#install-the-extension)
    - [Install from VSIX File](#install-from-vsix-file)
    - [Run in Extension Development Host](#run-in-extension-development-host)
@@ -32,7 +30,10 @@ Design UIs by dragging controls onto a canvas — no hand-editing markup require
 9. [HTML Designer](#html-designer)
    - [Available Elements](#html-available-elements)
    - [Properties Panel — HTML](#properties-panel--html)
-10. [HTML Live Preview](#html-live-preview)
+10. [Live Preview](#live-preview)
+    - [HTML Preview](#html-preview)
+    - [XAML / AXAML Preview](#xaml--axaml-preview)
+    - [Razor Preview](#razor-preview)
 11. [Keyboard Shortcuts](#keyboard-shortcuts)
 12. [Toolbar Reference](#toolbar-reference)
 13. [Context Menu Reference](#context-menu-reference)
@@ -71,6 +72,7 @@ The extension is read-write: it parses the existing markup into a visual represe
 | **Bi-directional sync** | External file edits update the canvas automatically |
 | **Three designer modes** | Separate, purpose-built designers for XAML, Razor, and HTML |
 | **HTML Live Preview** | Preview HTML files in a side panel inside VS Code with auto-refresh |
+| **XAML / Razor Preview** | Preview XAML/AXAML and Razor files with approximate HTML rendering in a side panel |
 | **Explorer context menu** | Right-click files in the Explorer to open directly with the designer |
 
 ---
@@ -88,14 +90,28 @@ The extension is read-write: it parses the existing markup into a visual represe
 
 ## Compile & Package from Source
 
-### 1. Clone the Repository
+### Quick Start
+
+```bash
+git clone https://github.com/jugih-official/vs-code-wysiwyg.git
+cd vs-code-wysiwyg
+npm install
+npm run compile
+npm run package
+```
+
+That's it — after running these commands you will find a `.vsix` file in the project root (e.g. `xaml-axaml-designer-0.1.0.vsix`).
+
+### Step-by-step Breakdown
+
+#### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/jugih-official/vs-code-wysiwyg.git
 cd vs-code-wysiwyg
 ```
 
-### 2. Install Dependencies
+#### 2. Install Dependencies
 
 ```bash
 npm install
@@ -103,7 +119,7 @@ npm install
 
 This installs TypeScript, the VS Code type definitions, and `@vscode/vsce` (the VS Code Extension packager).
 
-### 3. Compile TypeScript
+#### 3. Compile TypeScript
 
 ```bash
 npm run compile
@@ -115,14 +131,13 @@ The entry point for the extension is `out/extension.js`.
 > **Watch mode** — during active development you can run `npm run watch` instead.  
 > This keeps the TypeScript compiler running in the background and recompiles on every save.
 
-### 4. Package as VSIX
+#### 4. Package as VSIX
 
 ```bash
-echo y | npx @vscode/vsce package --allow-missing-repository
+npm run package
 ```
 
-> The `echo y` pre-answers the prompt about a missing LICENSE file.  
-> After a successful run you will find a `.vsix` file in the project root, e.g. `xaml-axaml-designer-0.1.0.vsix`.
+After a successful run you will find a `.vsix` file in the project root, e.g. `xaml-axaml-designer-0.1.0.vsix`.
 
 ---
 
@@ -169,8 +184,8 @@ There are three ways to open the visual designer:
 
 Right-click any supported file in the **Explorer** file tree to see the relevant designer command directly in the context menu:
 
-- `.xaml` / `.axaml` → **Open with XAML Visual Designer**
-- `.razor` → **Open with Razor Visual Designer**
+- `.xaml` / `.axaml` → **Open with XAML Visual Designer** and **Preview XAML/AXAML in Side Panel**
+- `.razor` → **Open with Razor Visual Designer** and **Preview Razor in Side Panel**
 - `.html` / `.htm` → **Open with HTML Visual Designer** and **Preview HTML in Side Panel**
 
 This allows you to open the designer without opening the file first.
@@ -185,6 +200,8 @@ You can also run the corresponding command from the Command Palette (`Ctrl+Shift
 | `Open with Razor Visual Designer` | Opens the active `.razor` file in the Razor designer |
 | `Open with HTML Visual Designer` | Opens the active `.html`/`.htm` file in the HTML designer |
 | `Preview HTML in Side Panel` | Opens a live HTML preview beside the editor |
+| `Preview XAML/AXAML in Side Panel` | Opens an approximate HTML preview of a XAML/AXAML file beside the editor |
+| `Preview Razor in Side Panel` | Opens an approximate HTML preview of a Razor file beside the editor |
 
 ### Designer Layout
 
@@ -435,16 +452,40 @@ The HTML designer generates standard HTML5 markup (`.html` / `.htm`).
 
 ---
 
-## HTML Live Preview
+## Live Preview
 
-The **HTML Live Preview** feature lets you preview any `.html` or `.htm` file directly inside VS Code, in a side panel next to the editor. The preview updates automatically when the file is edited or saved.
+The **Live Preview** feature lets you preview markup files directly inside VS Code, in a side panel next to the editor. The preview updates automatically when the file is edited or saved.
 
-### Opening the Preview
+### HTML Preview
+
+HTML files (`.html`, `.htm`) are rendered directly in the preview panel.
 
 | Method | Steps |
 |--------|-------|
 | **Explorer context menu** | Right-click an `.html` / `.htm` file in the Explorer → **Preview HTML in Side Panel** |
 | **Command Palette** | Open an HTML file, then run `Preview HTML in Side Panel` from the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) |
+
+### XAML / AXAML Preview
+
+XAML and AXAML files are converted to an approximate HTML representation for preview. Avalonia UI controls are mapped to their closest HTML equivalents — for example, `Button` becomes `<button>`, `TextBox` becomes `<input>`, `StackPanel` becomes a flex container, and so on. Layout attributes such as `Canvas.Left`, `Canvas.Top`, `Width`, `Height`, `Background`, and `Foreground` are translated to inline CSS.
+
+| Method | Steps |
+|--------|-------|
+| **Explorer context menu** | Right-click a `.xaml` / `.axaml` file in the Explorer → **Preview XAML/AXAML in Side Panel** |
+| **Command Palette** | Open a XAML/AXAML file, then run `Preview XAML/AXAML in Side Panel` from the Command Palette |
+
+> **Note:** The XAML preview is an approximation. Complex control templates and bindings cannot be executed in a browser — the preview focuses on layout and visual structure.
+
+### Razor Preview
+
+Razor files (`.razor`) are transformed for preview by stripping C# directives (`@code`, `@using`, `@page`, etc.) and converting Blazor components to their HTML equivalents — for example, `EditForm` becomes `<form>`, `InputText` becomes `<input type="text">`, and so on.
+
+| Method | Steps |
+|--------|-------|
+| **Explorer context menu** | Right-click a `.razor` file in the Explorer → **Preview Razor in Side Panel** |
+| **Command Palette** | Open a Razor file, then run `Preview Razor in Side Panel` from the Command Palette |
+
+> **Note:** The Razor preview shows the HTML structure only. C# code blocks, event handlers, and data bindings are removed for the preview.
 
 ### Preview Features
 
@@ -454,6 +495,7 @@ The **HTML Live Preview** feature lets you preview any `.html` or `.htm` file di
 | **Auto-refresh** | The preview refreshes automatically when the source file is edited or saved |
 | **Refresh button** | Click the ↻ Refresh button in the preview toolbar to manually reload |
 | **Sandboxed rendering** | The preview runs inside a sandboxed iframe for safety |
+| **File-type badge** | A coloured badge in the toolbar indicates whether the preview is showing HTML, XAML, or Razor content |
 
 ---
 
@@ -532,11 +574,9 @@ Right-click any control on the canvas to open the context menu.
 ### Packaging a Release Build
 
 ```bash
-# Compile first
+npm install
 npm run compile
-
-# Package (the 'echo y' confirms the missing-LICENSE prompt)
-echo y | npx @vscode/vsce package --allow-missing-repository
+npm run package
 ```
 
 The output file is `xaml-axaml-designer-<version>.vsix` in the project root.
@@ -553,6 +593,7 @@ vs-code-wysiwyg/
 │   ├── razorDesignerProvider.ts  # CustomTextEditorProvider for .razor
 │   ├── htmlDesignerProvider.ts   # CustomTextEditorProvider for .html / .htm
 │   ├── htmlPreviewProvider.ts    # HTML live preview panel provider
+│   ├── previewProvider.ts        # Unified preview provider for XAML/AXAML, Razor, and HTML files
 │   ├── xamlDocument.ts           # XAML document model / parser helpers
 │   ├── webviewContent.ts         # Webview HTML + embedded JS for the XAML designer
 │   ├── razorWebviewContent.ts    # Webview HTML + embedded JS for the Razor designer
@@ -560,5 +601,6 @@ vs-code-wysiwyg/
 ├── out/                          # Compiled JavaScript output (generated by tsc)
 ├── package.json                  # Extension manifest, scripts, and dependencies
 ├── tsconfig.json                 # TypeScript compiler configuration
+├── LICENSE                       # MIT License
 └── .vscodeignore                 # Files excluded from the VSIX package
 ```

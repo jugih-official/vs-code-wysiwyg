@@ -67,6 +67,14 @@
       {
         "command": "xamlDesigner.previewHtml",
         "title": "Preview HTML in Side Panel"
+      },
+      {
+        "command": "xamlDesigner.previewXaml",
+        "title": "Preview XAML/AXAML in Side Panel"
+      },
+      {
+        "command": "xamlDesigner.previewRazor",
+        "title": "Preview Razor in Side Panel"
       }
     ],
     "menus": {
@@ -89,6 +97,16 @@
         {
           "command": "xamlDesigner.previewHtml",
           "when": "resourceExtname == .html || resourceExtname == .htm",
+          "group": "navigation"
+        },
+        {
+          "command": "xamlDesigner.previewXaml",
+          "when": "resourceExtname == .xaml || resourceExtname == .axaml",
+          "group": "navigation"
+        },
+        {
+          "command": "xamlDesigner.previewRazor",
+          "when": "resourceExtname == .razor",
           "group": "navigation"
         }
       ]
