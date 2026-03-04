@@ -639,13 +639,13 @@ body {
     };
 
     // Types that use "Content" attribute
-    const contentTypes = ['Button', 'CheckBox', 'RadioButton', 'Label', 'Expander',
+    var contentTypes = ['Button', 'CheckBox', 'RadioButton', 'Label', 'Expander',
         'HyperlinkButton', 'RepeatButton', 'ToggleButton', 'SplitButton',
         'ToolTip', 'HeaderedContentControl'];
     // Types that use "Text" attribute
-    const textTypes = ['TextBlock', 'TextBox'];
+    var textTypes = ['TextBlock', 'TextBox'];
     // Container/layout types (not self-closing)
-    const containerTypes = ['StackPanel', 'WrapPanel', 'DockPanel', 'Grid', 'UniformGrid',
+    var containerTypes = ['StackPanel', 'WrapPanel', 'DockPanel', 'Grid', 'UniformGrid',
         'Canvas', 'Border', 'Viewbox', 'Expander', 'TabControl', 'Menu', 'TreeView',
         'DataGrid', 'ScrollViewer', 'ListBox',
         'SplitView', 'Carousel', 'NavigationView', 'FlyoutPresenter', 'Popup',
