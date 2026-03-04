@@ -225,7 +225,7 @@ export class PreviewProvider {
         let i = startPos + 1;
         // Read tag name
         let tagName = '';
-        while (i < xaml.length && /[a-zA-Z0-9_:.\-]/.test(xaml[i])) {
+        while (i < xaml.length && /[a-zA-Z0-9_:\.\-]/.test(xaml[i])) {
             tagName += xaml[i];
             i++;
         }
@@ -240,7 +240,7 @@ export class PreviewProvider {
 
             // Read attribute name
             let attrName = '';
-            while (i < xaml.length && /[a-zA-Z0-9_:.\-]/.test(xaml[i])) {
+            while (i < xaml.length && /[a-zA-Z0-9_:\.\-]/.test(xaml[i])) {
                 attrName += xaml[i];
                 i++;
             }
@@ -313,7 +313,7 @@ export class PreviewProvider {
         const title = name ? ` title="${this.escapeHtml(name)}"` : '';
 
         // Strip namespace prefix
-        const baseName = tagName.includes(':') ? tagName.split(':').pop()! : tagName;
+        const baseName = tagName.includes(':') ? (tagName.split(':').pop() || tagName) : tagName;
 
         switch (baseName) {
             case 'Window':
@@ -503,13 +503,19 @@ export class PreviewProvider {
 
         const margin = attrs.get('Margin');
         if (margin) {
-            const marginParts = margin.split(',').map(m => m.trim() + 'px');
+            const marginParts = margin.split(',').map(m => {
+                const v = m.trim();
+                return /[a-z%]$/i.test(v) ? v : v + 'px';
+            });
             parts.push(`margin:${marginParts.join(' ')}`);
         }
 
         const padding = attrs.get('Padding');
         if (padding) {
-            const paddingParts = padding.split(',').map(p => p.trim() + 'px');
+            const paddingParts = padding.split(',').map(p => {
+                const v = p.trim();
+                return /[a-z%]$/i.test(v) ? v : v + 'px';
+            });
             parts.push(`padding:${paddingParts.join(' ')}`);
         }
 
