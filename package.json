@@ -1,0 +1,53 @@
+{
+  "name": "xaml-axaml-designer",
+  "displayName": "XAML/AXAML Visual Designer",
+  "description": "WYSIWYG visual designer for .xaml and .axaml files with drag-and-drop controls and resizing",
+  "version": "0.1.0",
+  "publisher": "local-dev",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "xamlDesigner.visualEditor",
+        "displayName": "XAML Visual Designer",
+        "selector": [
+          {
+            "filenamePattern": "*.xaml"
+          },
+          {
+            "filenamePattern": "*.axaml"
+          }
+        ],
+        "priority": "option"
+      }
+    ],
+    "commands": [
+      {
+        "command": "xamlDesigner.openVisualEditor",
+        "title": "Open with XAML Visual Designer"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "npx @vscode/vsce package --allow-missing-repository"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.0",
+    "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^2.22.0",
+    "typescript": "^5.3.3"
+  },
+  "overrides": {
+    "undici": "5.28.4"
+  }
+}
