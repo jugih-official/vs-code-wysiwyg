@@ -196,6 +196,27 @@ body {
 .design-control[data-type="UniformGrid"] { background: rgba(0,204,122,0.06); border: 1px dashed #00cc7a55; }
 .design-control[data-type="ScrollViewer"]{ background: rgba(200,200,200,0.05); border: 1px solid #666; }
 .design-control[data-type="Viewbox"]     { background: rgba(200,200,200,0.05); border: 1px dashed #888; }
+.design-control[data-type="HyperlinkButton"] { background: transparent; border: 1px dashed #3a3a5c; border-radius: 3px; }
+.design-control[data-type="RepeatButton"]    { background: #3a3a5c; border-radius: 3px; border-color: #5a5a8c; }
+.design-control[data-type="ToggleButton"]    { background: #3a3a5c; border-radius: 3px; border-color: #5a5a8c; }
+.design-control[data-type="SplitButton"]     { background: #3a3a5c; border-radius: 3px; border-color: #5a5a8c; }
+.design-control[data-type="AutoCompleteBox"] { background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 2px; }
+.design-control[data-type="ColorPicker"]     { background: var(--input-bg); border: 1px solid var(--input-border); }
+.design-control[data-type="SplitView"]       { background: rgba(200,200,200,0.05); border: 1px solid #666; }
+.design-control[data-type="Carousel"]        { background: rgba(200,200,200,0.05); border: 1px solid #666; }
+.design-control[data-type="NavigationView"]  { background: rgba(200,200,200,0.05); border: 1px solid #666; }
+.design-control[data-type="FlyoutPresenter"] { background: rgba(200,200,200,0.05); border: 1px solid #666; }
+.design-control[data-type="ToolTip"]         { background: rgba(200,200,200,0.08); border: 1px solid #888; border-radius: 3px; }
+.design-control[data-type="Popup"]           { background: rgba(200,200,200,0.05); border: 1px solid #666; }
+.design-control[data-type="HeaderedContentControl"] { background: rgba(200,200,200,0.05); border: 1px solid #666; }
+.design-control[data-type="ContentControl"]  { background: rgba(200,200,200,0.05); border: 1px solid #666; }
+.design-control[data-type="ItemsControl"]    { background: rgba(200,200,200,0.05); border: 1px solid #666; }
+.design-control[data-type="Panel"]           { background: rgba(0,122,204,0.06); border: 1px dashed #007acc44; }
+.design-control[data-type="RelativePanel"]   { background: rgba(204,0,122,0.06); border: 1px dashed #cc007a44; }
+.design-control[data-type="ItemsRepeater"]   { background: rgba(122,204,0,0.06); border: 1px dashed #7acc0044; }
+.design-control[data-type="Polygon"]         { background: rgba(100,149,237,0.3); border: 1px solid #6495ed; }
+.design-control[data-type="Polyline"]        { background: transparent; border: 1px dashed #6495ed; }
+.design-control[data-type="Arc"]             { background: transparent; border: 1px dashed #6495ed; }
 
 /* ============ RESIZE HANDLES ============ */
 .resize-handle {
@@ -350,6 +371,18 @@ body {
         <div class="toolbox-item" draggable="true" data-type="Image">
             <span class="icon">Im</span> Image
         </div>
+        <div class="toolbox-item" draggable="true" data-type="HyperlinkButton">
+            <span class="icon">Hl</span> HyperlinkButton
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="RepeatButton">
+            <span class="icon">Rp</span> RepeatButton
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="ToggleButton">
+            <span class="icon">Tb</span> ToggleButton
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="SplitButton">
+            <span class="icon">Sb</span> SplitButton
+        </div>
 
         <h3>Input / Pickers</h3>
         <div class="toolbox-item" draggable="true" data-type="NumericUpDown">
@@ -363,6 +396,12 @@ body {
         </div>
         <div class="toolbox-item" draggable="true" data-type="Calendar">
             <span class="icon">Ca</span> Calendar
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="AutoCompleteBox">
+            <span class="icon">Ac</span> AutoCompleteBox
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="ColorPicker">
+            <span class="icon">Cp</span> ColorPicker
         </div>
 
         <h3>Containers</h3>
@@ -383,6 +422,33 @@ body {
         </div>
         <div class="toolbox-item" draggable="true" data-type="ScrollViewer">
             <span class="icon">Sv</span> ScrollViewer
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="SplitView">
+            <span class="icon">Sv</span> SplitView
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="Carousel">
+            <span class="icon">Cr</span> Carousel
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="NavigationView">
+            <span class="icon">Nv</span> NavigationView
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="FlyoutPresenter">
+            <span class="icon">Fp</span> FlyoutPresenter
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="ToolTip">
+            <span class="icon">Tt</span> ToolTip
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="Popup">
+            <span class="icon">Pu</span> Popup
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="HeaderedContentControl">
+            <span class="icon">Hc</span> HeaderedContentControl
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="ContentControl">
+            <span class="icon">Cc</span> ContentControl
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="ItemsControl">
+            <span class="icon">Ic</span> ItemsControl
         </div>
 
         <h3>Layout</h3>
@@ -410,6 +476,15 @@ body {
         <div class="toolbox-item" draggable="true" data-type="Viewbox">
             <span class="icon">Vb</span> Viewbox
         </div>
+        <div class="toolbox-item" draggable="true" data-type="Panel">
+            <span class="icon">Pn</span> Panel
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="RelativePanel">
+            <span class="icon">Rp</span> RelativePanel
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="ItemsRepeater">
+            <span class="icon">Ir</span> ItemsRepeater
+        </div>
 
         <h3>Shapes</h3>
         <div class="toolbox-item" draggable="true" data-type="Rectangle">
@@ -426,6 +501,15 @@ body {
         </div>
         <div class="toolbox-item" draggable="true" data-type="Separator">
             <span class="icon">Se</span> Separator
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="Polygon">
+            <span class="icon">Pg</span> Polygon
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="Polyline">
+            <span class="icon">Pl</span> Polyline
+        </div>
+        <div class="toolbox-item" draggable="true" data-type="Arc">
+            <span class="icon">Ar</span> Arc
         </div>
     </div>
 
@@ -504,11 +588,17 @@ body {
         Slider:       { w: 150, h: 22,  content: '' },
         ProgressBar:  { w: 150, h: 20,  content: '' },
         Image:        { w: 100, h: 80,  content: '' },
+        HyperlinkButton: { w: 140, h: 30, content: 'Link' },
+        RepeatButton: { w: 120, h: 32, content: 'Repeat' },
+        ToggleButton: { w: 120, h: 32, content: 'Toggle' },
+        SplitButton:  { w: 140, h: 32, content: 'Split' },
         // Input / Pickers
         NumericUpDown:{ w: 120, h: 28,  content: '' },
         DatePicker:   { w: 140, h: 30,  content: '' },
         TimePicker:   { w: 120, h: 30,  content: '' },
         Calendar:     { w: 200, h: 180, content: '' },
+        AutoCompleteBox: { w: 160, h: 28, content: '' },
+        ColorPicker:  { w: 200, h: 200, content: '' },
         // Containers
         Expander:     { w: 200, h: 120, content: 'Expander' },
         TabControl:   { w: 250, h: 180, content: '' },
@@ -516,6 +606,15 @@ body {
         TreeView:     { w: 180, h: 150, content: '' },
         DataGrid:     { w: 300, h: 200, content: '' },
         ScrollViewer: { w: 200, h: 150, content: '' },
+        SplitView:    { w: 300, h: 200, content: '' },
+        Carousel:     { w: 250, h: 180, content: '' },
+        NavigationView: { w: 280, h: 300, content: '' },
+        FlyoutPresenter: { w: 200, h: 150, content: '' },
+        ToolTip:      { w: 150, h: 60,  content: 'ToolTip' },
+        Popup:        { w: 200, h: 150, content: '' },
+        HeaderedContentControl: { w: 200, h: 150, content: 'Header' },
+        ContentControl: { w: 200, h: 150, content: '' },
+        ItemsControl: { w: 200, h: 150, content: '' },
         // Layout
         StackPanel:   { w: 200, h: 150, content: '' },
         WrapPanel:    { w: 200, h: 150, content: '' },
@@ -525,22 +624,33 @@ body {
         Canvas:       { w: 200, h: 150, content: '' },
         Border:       { w: 160, h: 120, content: '' },
         Viewbox:      { w: 150, h: 150, content: '' },
+        Panel:        { w: 200, h: 150, content: '' },
+        RelativePanel:{ w: 250, h: 180, content: '' },
+        ItemsRepeater:{ w: 200, h: 150, content: '' },
         // Shapes
         Rectangle:    { w: 100, h: 60,  content: '' },
         Ellipse:      { w: 80,  h: 80,  content: '' },
         Line:         { w: 100, h: 2,   content: '' },
         Path:         { w: 80,  h: 80,  content: '' },
         Separator:    { w: 150, h: 2,   content: '' },
+        Polygon:      { w: 80,  h: 80,  content: '' },
+        Polyline:     { w: 100, h: 60,  content: '' },
+        Arc:          { w: 80,  h: 80,  content: '' },
     };
 
     // Types that use "Content" attribute
-    const contentTypes = ['Button', 'CheckBox', 'RadioButton', 'Label', 'Expander'];
+    const contentTypes = ['Button', 'CheckBox', 'RadioButton', 'Label', 'Expander',
+        'HyperlinkButton', 'RepeatButton', 'ToggleButton', 'SplitButton',
+        'ToolTip', 'HeaderedContentControl'];
     // Types that use "Text" attribute
     const textTypes = ['TextBlock', 'TextBox'];
     // Container/layout types (not self-closing)
     const containerTypes = ['StackPanel', 'WrapPanel', 'DockPanel', 'Grid', 'UniformGrid',
         'Canvas', 'Border', 'Viewbox', 'Expander', 'TabControl', 'Menu', 'TreeView',
-        'DataGrid', 'ScrollViewer', 'ListBox'];
+        'DataGrid', 'ScrollViewer', 'ListBox',
+        'SplitView', 'Carousel', 'NavigationView', 'FlyoutPresenter', 'Popup',
+        'HeaderedContentControl', 'ContentControl', 'ItemsControl',
+        'Panel', 'RelativePanel', 'ItemsRepeater'];
 
     // =================== XAML PARSING ===================
     /**
@@ -891,6 +1001,48 @@ body {
                 return '<span class="control-label" style="pointer-events:none;color:#6495ed;font-size:10px">Path</span>';
             case 'Separator':
                 return '<span style="pointer-events:none;position:absolute;top:50%;left:4px;right:4px;height:1px;background:#888"></span>';
+            case 'HyperlinkButton':
+                return '<span class="control-label" style="pointer-events:none;color:#4da6ff;text-decoration:underline">' + esc(ctrl.content || 'Link') + '</span>';
+            case 'RepeatButton':
+                return '<span class="control-label" style="pointer-events:none;display:flex;align-items:center;gap:4px;justify-content:center">&#8635; ' + esc(ctrl.content || 'Repeat') + '</span>';
+            case 'ToggleButton':
+                return '<span class="control-label" style="pointer-events:none;display:flex;align-items:center;gap:4px;justify-content:center">&#9632; ' + esc(ctrl.content || 'Toggle') + '</span>';
+            case 'SplitButton':
+                return '<span style="pointer-events:none;display:flex;width:100%;height:100%;align-items:center"><span style="flex:1;text-align:center;padding:0 6px">' + esc(ctrl.content || 'Split') + '</span><span style="border-left:1px solid #5a5a8c;padding:0 6px;display:flex;align-items:center">&#9660;</span></span>';
+            case 'AutoCompleteBox':
+                return '<span class="control-label" style="pointer-events:none;display:flex;justify-content:space-between;padding:0 8px;width:100%;color:#999"><span>Search...</span><span>&#128269;</span></span>';
+            case 'ColorPicker':
+                return '<span style="pointer-events:none;display:flex;flex-wrap:wrap;gap:2px;padding:6px;align-content:flex-start"><span style="width:24px;height:24px;background:#ff0000;border-radius:2px"></span><span style="width:24px;height:24px;background:#00ff00;border-radius:2px"></span><span style="width:24px;height:24px;background:#0000ff;border-radius:2px"></span><span style="width:24px;height:24px;background:#ffff00;border-radius:2px"></span><span style="width:24px;height:24px;background:#ff00ff;border-radius:2px"></span><span style="width:24px;height:24px;background:#00ffff;border-radius:2px"></span></span>';
+            case 'SplitView':
+                return '<span style="pointer-events:none;display:flex;width:100%;height:100%"><span style="width:30%;background:rgba(100,100,200,0.15);border-right:1px solid #666;display:flex;align-items:center;justify-content:center;font-size:9px;color:#888">Pane</span><span style="flex:1;display:flex;align-items:center;justify-content:center;font-size:9px;color:#888">Content</span></span>';
+            case 'Carousel':
+                return '<span style="pointer-events:none;display:flex;width:100%;height:100%;align-items:center"><span style="padding:0 6px;font-size:14px;color:#888">&#9664;</span><span style="flex:1;display:flex;align-items:center;justify-content:center;font-size:10px;color:#888">Slide 1</span><span style="padding:0 6px;font-size:14px;color:#888">&#9654;</span></span>';
+            case 'NavigationView':
+                return '<span style="pointer-events:none;display:flex;width:100%;height:100%"><span style="width:40px;background:rgba(100,100,200,0.12);border-right:1px solid #666;display:flex;flex-direction:column;align-items:center;padding-top:8px;gap:8px;font-size:10px"><span>&#9776;</span><span>&#8962;</span><span>&#9881;</span></span><span style="flex:1;display:flex;align-items:center;justify-content:center;font-size:10px;color:#888">Content</span></span>';
+            case 'FlyoutPresenter':
+                return '<span style="pointer-events:none;display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:10px;color:#888;border:1px solid #555;background:rgba(50,50,50,0.5)">Flyout</span>';
+            case 'ToolTip':
+                return '<span class="control-label" style="pointer-events:none;font-size:11px">' + esc(ctrl.content || 'ToolTip') + '</span>';
+            case 'Popup':
+                return '<span style="pointer-events:none;display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:10px;color:#888;background:rgba(50,50,60,0.4);border:1px solid #777">Popup</span>';
+            case 'HeaderedContentControl':
+                return '<span style="pointer-events:none;display:flex;flex-direction:column;width:100%;height:100%"><span style="padding:4px 8px;border-bottom:1px solid #666;font-size:11px;font-weight:bold">' + esc(ctrl.content || 'Header') + '</span><span style="flex:1;display:flex;align-items:center;justify-content:center;font-size:10px;color:#888">Content</span></span>';
+            case 'ContentControl':
+                return '<span class="control-label" style="pointer-events:none;color:#888;font-size:10px">ContentControl</span>';
+            case 'ItemsControl':
+                return '<span style="pointer-events:none;display:flex;flex-direction:column;align-self:flex-start;padding:6px;font-size:10px;gap:2px;width:100%;color:#888"><span>&#8226; Item 1</span><span>&#8226; Item 2</span><span>&#8226; Item 3</span></span>';
+            case 'Panel':
+                return '<span class="control-label" style="pointer-events:none;color:#007acc66;font-size:10px">Panel</span>';
+            case 'RelativePanel':
+                return '<span style="pointer-events:none;display:flex;width:100%;height:100%;align-items:center;justify-content:center;position:relative"><span style="position:absolute;top:2px;left:2px;font-size:8px;color:#cc007a55">&#8598;</span><span style="position:absolute;top:2px;right:2px;font-size:8px;color:#cc007a55">&#8599;</span><span style="position:absolute;bottom:2px;left:2px;font-size:8px;color:#cc007a55">&#8601;</span><span style="position:absolute;bottom:2px;right:2px;font-size:8px;color:#cc007a55">&#8600;</span><span style="font-size:10px;color:#cc007a66">RelativePanel</span></span>';
+            case 'ItemsRepeater':
+                return '<span style="pointer-events:none;display:flex;flex-direction:column;align-self:flex-start;padding:6px;font-size:10px;gap:1px;width:100%;color:#7acc0088"><span>&#8943; Item</span><span>&#8943; Item</span><span>&#8943; Item</span></span>';
+            case 'Polygon':
+                return '<svg style="pointer-events:none;position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 80 80"><polygon points="40,5 75,75 5,75" fill="rgba(100,149,237,0.3)" stroke="#6495ed" stroke-width="2"/></svg>';
+            case 'Polyline':
+                return '<svg style="pointer-events:none;position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 100 60"><polyline points="5,55 30,10 55,40 80,5 95,30" fill="none" stroke="#6495ed" stroke-width="2"/></svg>';
+            case 'Arc':
+                return '<svg style="pointer-events:none;position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 80 80"><path d="M10,60 A35,35 0 0,1 70,60" fill="none" stroke="#6495ed" stroke-width="2"/></svg>';
             default:
                 return '<span class="control-label">' + esc(ctrl.type) + '</span>';
         }
@@ -1053,6 +1205,286 @@ body {
     }
 
     // =================== PROPERTIES PANEL ===================
+    var controlPropertyDefs = {
+        Button: [
+            { label: 'Command', attr: 'Command', type: 'text' },
+            { label: 'CommandParameter', attr: 'CommandParameter', type: 'text' },
+            { label: 'IsDefault', attr: 'IsDefault', type: 'select', options: ['True','False'] },
+            { label: 'IsCancel', attr: 'IsCancel', type: 'select', options: ['True','False'] },
+            { label: 'ClickMode', attr: 'ClickMode', type: 'select', options: ['Release','Press','Hover'] },
+        ],
+        HyperlinkButton: [
+            { label: 'Command', attr: 'Command', type: 'text' },
+            { label: 'CommandParameter', attr: 'CommandParameter', type: 'text' },
+            { label: 'ClickMode', attr: 'ClickMode', type: 'select', options: ['Release','Press','Hover'] },
+        ],
+        RepeatButton: [
+            { label: 'Command', attr: 'Command', type: 'text' },
+            { label: 'CommandParameter', attr: 'CommandParameter', type: 'text' },
+            { label: 'ClickMode', attr: 'ClickMode', type: 'select', options: ['Release','Press','Hover'] },
+        ],
+        ToggleButton: [
+            { label: 'Command', attr: 'Command', type: 'text' },
+            { label: 'CommandParameter', attr: 'CommandParameter', type: 'text' },
+            { label: 'ClickMode', attr: 'ClickMode', type: 'select', options: ['Release','Press','Hover'] },
+            { label: 'IsChecked', attr: 'IsChecked', type: 'select', options: ['True','False'] },
+            { label: 'IsThreeState', attr: 'IsThreeState', type: 'select', options: ['True','False'] },
+        ],
+        SplitButton: [
+            { label: 'Command', attr: 'Command', type: 'text' },
+            { label: 'CommandParameter', attr: 'CommandParameter', type: 'text' },
+            { label: 'ClickMode', attr: 'ClickMode', type: 'select', options: ['Release','Press','Hover'] },
+        ],
+        TextBox: [
+            { label: 'Watermark', attr: 'Watermark', type: 'text' },
+            { label: 'AcceptsReturn', attr: 'AcceptsReturn', type: 'select', options: ['True','False'] },
+            { label: 'AcceptsTab', attr: 'AcceptsTab', type: 'select', options: ['True','False'] },
+            { label: 'IsReadOnly', attr: 'IsReadOnly', type: 'select', options: ['True','False'] },
+            { label: 'MaxLength', attr: 'MaxLength', type: 'number' },
+            { label: 'TextWrapping', attr: 'TextWrapping', type: 'select', options: ['NoWrap','Wrap','WrapWithOverflow'] },
+        ],
+        CheckBox: [
+            { label: 'IsChecked', attr: 'IsChecked', type: 'select', options: ['True','False'] },
+            { label: 'IsThreeState', attr: 'IsThreeState', type: 'select', options: ['True','False'] },
+        ],
+        RadioButton: [
+            { label: 'IsChecked', attr: 'IsChecked', type: 'select', options: ['True','False'] },
+            { label: 'GroupName', attr: 'GroupName', type: 'text' },
+        ],
+        ToggleSwitch: [
+            { label: 'IsChecked', attr: 'IsChecked', type: 'select', options: ['True','False'] },
+            { label: 'OnContent', attr: 'OnContent', type: 'text' },
+            { label: 'OffContent', attr: 'OffContent', type: 'text' },
+        ],
+        ComboBox: [
+            { label: 'SelectedIndex', attr: 'SelectedIndex', type: 'number' },
+            { label: 'PlaceholderText', attr: 'PlaceholderText', type: 'text' },
+            { label: 'IsDropDownOpen', attr: 'IsDropDownOpen', type: 'select', options: ['True','False'] },
+        ],
+        ListBox: [
+            { label: 'SelectedIndex', attr: 'SelectedIndex', type: 'number' },
+            { label: 'SelectionMode', attr: 'SelectionMode', type: 'select', options: ['Single','Multiple','Toggle','AlwaysSelected'] },
+        ],
+        Slider: [
+            { label: 'Minimum', attr: 'Minimum', type: 'number' },
+            { label: 'Maximum', attr: 'Maximum', type: 'number' },
+            { label: 'Value', attr: 'Value', type: 'number' },
+            { label: 'SmallChange', attr: 'SmallChange', type: 'number' },
+            { label: 'LargeChange', attr: 'LargeChange', type: 'number' },
+            { label: 'TickFrequency', attr: 'TickFrequency', type: 'number' },
+            { label: 'IsSnapToTickEnabled', attr: 'IsSnapToTickEnabled', type: 'select', options: ['True','False'] },
+            { label: 'Orientation', attr: 'Orientation', type: 'select', options: ['Horizontal','Vertical'] },
+        ],
+        ProgressBar: [
+            { label: 'Minimum', attr: 'Minimum', type: 'number' },
+            { label: 'Maximum', attr: 'Maximum', type: 'number' },
+            { label: 'Value', attr: 'Value', type: 'number' },
+            { label: 'IsIndeterminate', attr: 'IsIndeterminate', type: 'select', options: ['True','False'] },
+        ],
+        Image: [
+            { label: 'Source', attr: 'Source', type: 'text' },
+            { label: 'Stretch', attr: 'Stretch', type: 'select', options: ['None','Fill','Uniform','UniformToFill'] },
+        ],
+        NumericUpDown: [
+            { label: 'Value', attr: 'Value', type: 'number' },
+            { label: 'Minimum', attr: 'Minimum', type: 'number' },
+            { label: 'Maximum', attr: 'Maximum', type: 'number' },
+            { label: 'Increment', attr: 'Increment', type: 'number' },
+            { label: 'FormatString', attr: 'FormatString', type: 'text' },
+        ],
+        DatePicker: [
+            { label: 'SelectedDate', attr: 'SelectedDate', type: 'text' },
+            { label: 'DayFormat', attr: 'DayFormat', type: 'text' },
+            { label: 'MonthFormat', attr: 'MonthFormat', type: 'text' },
+            { label: 'YearFormat', attr: 'YearFormat', type: 'text' },
+        ],
+        TimePicker: [
+            { label: 'SelectedTime', attr: 'SelectedTime', type: 'text' },
+            { label: 'ClockIdentifier', attr: 'ClockIdentifier', type: 'select', options: ['12HourClock','24HourClock'] },
+        ],
+        Calendar: [
+            { label: 'DisplayMode', attr: 'DisplayMode', type: 'select', options: ['Month','Year','Decade'] },
+            { label: 'SelectedDate', attr: 'SelectedDate', type: 'text' },
+        ],
+        StackPanel: [
+            { label: 'Orientation', attr: 'Orientation', type: 'select', options: ['Vertical','Horizontal'] },
+            { label: 'Spacing', attr: 'Spacing', type: 'number' },
+        ],
+        WrapPanel: [
+            { label: 'Orientation', attr: 'Orientation', type: 'select', options: ['Vertical','Horizontal'] },
+        ],
+        DockPanel: [
+            { label: 'LastChildFill', attr: 'LastChildFill', type: 'select', options: ['True','False'] },
+        ],
+        Grid: [
+            { label: 'RowDefinitions', attr: 'RowDefinitions', type: 'text' },
+            { label: 'ColumnDefinitions', attr: 'ColumnDefinitions', type: 'text' },
+            { label: 'ShowGridLines', attr: 'ShowGridLines', type: 'select', options: ['True','False'] },
+        ],
+        UniformGrid: [
+            { label: 'Rows', attr: 'Rows', type: 'number' },
+            { label: 'Columns', attr: 'Columns', type: 'number' },
+        ],
+        Border: [
+            { label: 'CornerRadius', attr: 'CornerRadius', type: 'text' },
+            { label: 'BorderBrush', attr: 'BorderBrush', type: 'color' },
+            { label: 'BorderThickness', attr: 'BorderThickness', type: 'text' },
+        ],
+        Expander: [
+            { label: 'IsExpanded', attr: 'IsExpanded', type: 'select', options: ['True','False'] },
+            { label: 'ExpandDirection', attr: 'ExpandDirection', type: 'select', options: ['Down','Up','Left','Right'] },
+        ],
+        TabControl: [
+            { label: 'SelectedIndex', attr: 'SelectedIndex', type: 'number' },
+            { label: 'TabStripPlacement', attr: 'TabStripPlacement', type: 'select', options: ['Top','Bottom','Left','Right'] },
+        ],
+        DataGrid: [
+            { label: 'AutoGenerateColumns', attr: 'AutoGenerateColumns', type: 'select', options: ['True','False'] },
+            { label: 'CanUserResizeColumns', attr: 'CanUserResizeColumns', type: 'select', options: ['True','False'] },
+            { label: 'CanUserSortColumns', attr: 'CanUserSortColumns', type: 'select', options: ['True','False'] },
+            { label: 'IsReadOnly', attr: 'IsReadOnly', type: 'select', options: ['True','False'] },
+        ],
+        ScrollViewer: [
+            { label: 'HorizontalScrollBarVisibility', attr: 'HorizontalScrollBarVisibility', type: 'select', options: ['Disabled','Auto','Hidden','Visible'] },
+            { label: 'VerticalScrollBarVisibility', attr: 'VerticalScrollBarVisibility', type: 'select', options: ['Disabled','Auto','Hidden','Visible'] },
+        ],
+        Rectangle: [
+            { label: 'Fill', attr: 'Fill', type: 'color' },
+            { label: 'Stroke', attr: 'Stroke', type: 'color' },
+            { label: 'StrokeThickness', attr: 'StrokeThickness', type: 'number' },
+            { label: 'RadiusX', attr: 'RadiusX', type: 'number' },
+            { label: 'RadiusY', attr: 'RadiusY', type: 'number' },
+        ],
+        Ellipse: [
+            { label: 'Fill', attr: 'Fill', type: 'color' },
+            { label: 'Stroke', attr: 'Stroke', type: 'color' },
+            { label: 'StrokeThickness', attr: 'StrokeThickness', type: 'number' },
+        ],
+        Line: [
+            { label: 'X1', attr: 'X1', type: 'number' },
+            { label: 'Y1', attr: 'Y1', type: 'number' },
+            { label: 'X2', attr: 'X2', type: 'number' },
+            { label: 'Y2', attr: 'Y2', type: 'number' },
+            { label: 'Stroke', attr: 'Stroke', type: 'color' },
+            { label: 'StrokeThickness', attr: 'StrokeThickness', type: 'number' },
+        ],
+        Path: [
+            { label: 'Data', attr: 'Data', type: 'text' },
+            { label: 'Fill', attr: 'Fill', type: 'color' },
+            { label: 'Stroke', attr: 'Stroke', type: 'color' },
+            { label: 'StrokeThickness', attr: 'StrokeThickness', type: 'number' },
+        ],
+        AutoCompleteBox: [
+            { label: 'Watermark', attr: 'Watermark', type: 'text' },
+            { label: 'FilterMode', attr: 'FilterMode', type: 'select', options: ['None','StartsWith','StartsWithCaseSensitive','StartsWithOrdinal','StartsWithOrdinalCaseSensitive','Contains','ContainsCaseSensitive','ContainsOrdinal','ContainsOrdinalCaseSensitive','Equals','EqualsCaseSensitive','EqualsOrdinal','EqualsOrdinalCaseSensitive'] },
+        ],
+        SplitView: [
+            { label: 'DisplayMode', attr: 'DisplayMode', type: 'select', options: ['Overlay','Inline','CompactOverlay','CompactInline'] },
+            { label: 'IsPaneOpen', attr: 'IsPaneOpen', type: 'select', options: ['True','False'] },
+            { label: 'OpenPaneLength', attr: 'OpenPaneLength', type: 'number' },
+            { label: 'PanePlacement', attr: 'PanePlacement', type: 'select', options: ['Left','Right'] },
+        ],
+        Carousel: [
+            { label: 'Orientation', attr: 'Orientation', type: 'select', options: ['Horizontal','Vertical'] },
+        ],
+        NavigationView: [
+            { label: 'IsOpen', attr: 'IsOpen', type: 'select', options: ['True','False'] },
+            { label: 'DisplayMode', attr: 'DisplayMode', type: 'select', options: ['Minimal','Compact','Expanded'] },
+            { label: 'PaneDisplayMode', attr: 'PaneDisplayMode', type: 'select', options: ['Auto','Left','Top','LeftCompact','LeftMinimal'] },
+        ],
+        Polygon: [
+            { label: 'Fill', attr: 'Fill', type: 'color' },
+            { label: 'Stroke', attr: 'Stroke', type: 'color' },
+            { label: 'StrokeThickness', attr: 'StrokeThickness', type: 'number' },
+            { label: 'Points', attr: 'Points', type: 'text' },
+        ],
+        Polyline: [
+            { label: 'Stroke', attr: 'Stroke', type: 'color' },
+            { label: 'StrokeThickness', attr: 'StrokeThickness', type: 'number' },
+            { label: 'Points', attr: 'Points', type: 'text' },
+        ],
+        Arc: [
+            { label: 'StartAngle', attr: 'StartAngle', type: 'number' },
+            { label: 'SweepAngle', attr: 'SweepAngle', type: 'number' },
+            { label: 'Stroke', attr: 'Stroke', type: 'color' },
+            { label: 'StrokeThickness', attr: 'StrokeThickness', type: 'number' },
+        ],
+        ColorPicker: [
+            { label: 'Color', attr: 'Color', type: 'color' },
+        ],
+    };
+
+    var commonPropertyDefs = [
+        { label: 'Background', attr: 'Background', type: 'color' },
+        { label: 'Foreground', attr: 'Foreground', type: 'color' },
+        { label: 'FontSize', attr: 'FontSize', type: 'number' },
+        { label: 'FontWeight', attr: 'FontWeight', type: 'select', options: ['Normal','Bold','SemiBold','Light','Thin','ExtraLight','Medium','ExtraBold','Black'] },
+        { label: 'Padding', attr: 'Padding', type: 'text' },
+        { label: 'Margin', attr: 'Margin', type: 'text' },
+        { label: 'HorizontalAlignment', attr: 'HorizontalAlignment', type: 'select', options: ['Left','Center','Right','Stretch'] },
+        { label: 'VerticalAlignment', attr: 'VerticalAlignment', type: 'select', options: ['Top','Center','Bottom','Stretch'] },
+        { label: 'IsEnabled', attr: 'IsEnabled', type: 'select', options: ['True','False'] },
+        { label: 'IsVisible', attr: 'IsVisible', type: 'select', options: ['True','False'] },
+        { label: 'Opacity', attr: 'Opacity', type: 'number' },
+        { label: 'ToolTip.Tip', attr: 'ToolTip.Tip', type: 'text' },
+        { label: 'Classes', attr: 'Classes', type: 'text' },
+    ];
+
+    function createPropertyRow(propDef, ctrl, fields) {
+        var div = document.createElement('div');
+        div.className = 'prop-row';
+        var lbl = document.createElement('label');
+        lbl.textContent = propDef.label;
+        div.appendChild(lbl);
+
+        var currentVal = (ctrl.properties && ctrl.properties[propDef.attr] !== undefined) ? ctrl.properties[propDef.attr] : '';
+
+        if (propDef.type === 'select') {
+            var sel = document.createElement('select');
+            var emptyOpt = document.createElement('option');
+            emptyOpt.value = '';
+            emptyOpt.textContent = '';
+            sel.appendChild(emptyOpt);
+            for (var oi = 0; oi < propDef.options.length; oi++) {
+                var opt = document.createElement('option');
+                opt.value = propDef.options[oi];
+                opt.textContent = propDef.options[oi];
+                if (propDef.options[oi] === currentVal) opt.selected = true;
+                sel.appendChild(opt);
+            }
+            (function(attr, selEl, c) {
+                selEl.addEventListener('change', function() {
+                    saveUndo();
+                    if (selEl.value === '') {
+                        delete c.properties[attr];
+                    } else {
+                        c.properties[attr] = selEl.value;
+                    }
+                    render();
+                });
+            })(propDef.attr, sel, ctrl);
+            div.appendChild(sel);
+        } else {
+            var input = document.createElement('input');
+            input.type = (propDef.type === 'number') ? 'number' : 'text';
+            input.value = currentVal;
+            (function(attr, inp, c) {
+                inp.addEventListener('change', function() {
+                    saveUndo();
+                    if (inp.value === '') {
+                        delete c.properties[attr];
+                    } else {
+                        c.properties[attr] = inp.value;
+                    }
+                    render();
+                });
+            })(propDef.attr, input, ctrl);
+            div.appendChild(input);
+        }
+
+        fields.appendChild(div);
+    }
+
     function updateProperties() {
         var noSel = document.getElementById('noSelection');
         var fields = document.getElementById('propertyFields');
@@ -1085,12 +1517,7 @@ body {
             rows.push({ label: 'Text', key: 'content', value: ctrl.content || '' });
         }
 
-        // Show preserved extra properties (editable)
-        var propKeys = Object.keys(ctrl.properties || {});
-        for (var pi = 0; pi < propKeys.length; pi++) {
-            rows.push({ label: propKeys[pi], key: 'prop_' + propKeys[pi], value: ctrl.properties[propKeys[pi]], propKey: propKeys[pi] });
-        }
-
+        // Render the basic property rows
         for (var ri = 0; ri < rows.length; ri++) {
             var row = rows[ri];
             var div = document.createElement('div');
@@ -1113,13 +1540,70 @@ body {
                     else if (r.key === 'h') c.h = Math.max(16, parseFloat(inp.value) || 16);
                     else if (r.key === 'name') c.name = inp.value;
                     else if (r.key === 'content') c.content = inp.value;
-                    else if (r.propKey) c.properties[r.propKey] = inp.value;
                     render();
                 });
             })(row, input, ctrl);
 
             div.appendChild(input);
             fields.appendChild(div);
+        }
+
+        // Control-specific properties
+        var specificDefs = controlPropertyDefs[ctrl.type];
+        if (specificDefs) {
+            var specHeader = document.createElement('div');
+            specHeader.className = 'prop-row';
+            specHeader.innerHTML = '<label style="color:#007acc;font-weight:bold;margin-top:6px;border-top:1px solid #333;padding-top:6px">' + esc(ctrl.type) + ' Properties</label>';
+            fields.appendChild(specHeader);
+
+            var knownSpecAttrs = {};
+            for (var si = 0; si < specificDefs.length; si++) {
+                knownSpecAttrs[specificDefs[si].attr] = true;
+                createPropertyRow(specificDefs[si], ctrl, fields);
+            }
+        }
+
+        // Show preserved extra properties that are not covered by specific defs
+        var propKeys = Object.keys(ctrl.properties || {});
+        var knownCommonAttrs = {};
+        for (var ci = 0; ci < commonPropertyDefs.length; ci++) {
+            knownCommonAttrs[commonPropertyDefs[ci].attr] = true;
+        }
+        for (var pi = 0; pi < propKeys.length; pi++) {
+            var pk = propKeys[pi];
+            if (specificDefs && knownSpecAttrs && knownSpecAttrs[pk]) continue;
+            if (knownCommonAttrs[pk]) continue;
+            var extraDiv = document.createElement('div');
+            extraDiv.className = 'prop-row';
+            var extraLbl = document.createElement('label');
+            extraLbl.textContent = pk;
+            extraDiv.appendChild(extraLbl);
+            var extraInp = document.createElement('input');
+            extraInp.type = 'text';
+            extraInp.value = ctrl.properties[pk];
+            (function(key, inp, c) {
+                inp.addEventListener('change', function() {
+                    saveUndo();
+                    if (inp.value === '') {
+                        delete c.properties[key];
+                    } else {
+                        c.properties[key] = inp.value;
+                    }
+                    render();
+                });
+            })(pk, extraInp, ctrl);
+            extraDiv.appendChild(extraInp);
+            fields.appendChild(extraDiv);
+        }
+
+        // Common properties (shown after control-specific)
+        var commonHeader = document.createElement('div');
+        commonHeader.className = 'prop-row';
+        commonHeader.innerHTML = '<label style="color:#888;font-weight:bold;margin-top:6px;border-top:1px solid #333;padding-top:6px">Common Properties</label>';
+        fields.appendChild(commonHeader);
+
+        for (var cpi = 0; cpi < commonPropertyDefs.length; cpi++) {
+            createPropertyRow(commonPropertyDefs[cpi], ctrl, fields);
         }
     }
 
