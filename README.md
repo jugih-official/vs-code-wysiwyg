@@ -8,7 +8,7 @@
 </form>
 
 <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WGY835R5UWSRA">
-  <img src="https://raw.githubusercontent.com/jugih-official/vs-code-wysiwyg/master/paypal-donate-button.png" alt="Donate with PayPal" style="width:50;" />
+  <img src="https://raw.githubusercontent.com/jugih-official/vs-code-wysiwyg/master/paypal-donate-button.png" alt="Donate with PayPal" style="width:50%;" />
 </a>
 
 
