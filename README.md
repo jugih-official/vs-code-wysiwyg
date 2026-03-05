@@ -98,6 +98,7 @@ cd vs-code-wysiwyg
 npm install
 npm run compile
 npm run package
+code --install-extension xaml-axaml-designer-x.z.y.vsix
 ```
 
 That's it — after running these commands you will find a `.vsix` file in the project root (e.g. `xaml-axaml-designer-0.1.0.vsix`).
