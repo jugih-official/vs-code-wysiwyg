@@ -1,8 +1,8 @@
 {
-  "name": "wyiwyg-designer",
+  "name": "wysiwyg-designer",
   "displayName": "XAML/AXAML/Razor/HTML Visual Designer",
   "description": "WYSIWYG visual designer for .xaml, .axaml, .razor, .html and .htm files with drag-and-drop controls and resizing",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "publisher": "jugih-official",
   "engines": {
     "vscode": "^1.85.0"
