@@ -2,11 +2,6 @@
 <br>
 <a href="https://www.buymeacoffee.com/jugih" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
-
-<a href="https://www.buymeacoffee.com/jugih" target="_blank"><img src=""
-<img alt="" border="0" src="https://www.paypal.com/en_FI/i/scr/pixel.gif" width="1" height="1" />
-</form>
-
 <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WGY835R5UWSRA">
   <img src="https://raw.githubusercontent.com/jugih-official/vs-code-wysiwyg/master/paypal-donate-button.png" alt="Donate with PayPal" style="width:20%;" />
 </a>
