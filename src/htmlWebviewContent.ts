@@ -345,6 +345,25 @@ body {
     display: none;
     z-index: 50;
 }
+/* Panel splitter/resizer handles */
+.panel-splitter {
+    width: 5px;
+    cursor: col-resize;
+    background: transparent;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    transition: background 0.15s;
+}
+.panel-splitter:hover, .panel-splitter.active {
+    background: var(--control-selected);
+}
+.panel-splitter::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    left: -2px; right: -2px;
+}
 </style>
 </head>
 <body>
@@ -573,6 +592,8 @@ body {
         </div>
     </div>
 
+    <div class="panel-splitter" id="splitterLeft"></div>
+
     <!-- CANVAS -->
     <div class="canvas-wrapper" id="canvasWrapper">
         <div style="position: relative;">
@@ -582,6 +603,8 @@ body {
             </div>
         </div>
     </div>
+
+    <div class="panel-splitter" id="splitterRight"></div>
 
     <!-- PROPERTIES PANEL -->
     <div class="properties-panel" id="propertiesPanel">
@@ -619,6 +642,10 @@ body {
     var dragStartX = 0, dragStartY = 0;
     var dragOrigX = 0, dragOrigY = 0, dragOrigW = 0, dragOrigH = 0;
     var documentLoaded = false;
+    var isSplitterDragging = false;
+    var activeSplitter = null;
+    var splitterStartX = 0;
+    var splitterStartWidth = 0;
     var autoSyncTimer = null;
 
     // =================== AUTO-SYNC ===================
@@ -1509,6 +1536,16 @@ body {
         if (isResizing && selectedId !== null) {
             handleResize(e);
         }
+        if (isSplitterDragging && activeSplitter) {
+            var dx = e.clientX - splitterStartX;
+            if (activeSplitter === 'left') {
+                var newW = Math.max(100, Math.min(400, splitterStartWidth + dx));
+                document.querySelector('.toolbox').style.width = newW + 'px';
+            } else if (activeSplitter === 'right') {
+                var newW = Math.max(120, Math.min(500, splitterStartWidth - dx));
+                document.getElementById('propertiesPanel').style.width = newW + 'px';
+            }
+        }
     });
 
     document.addEventListener('mouseup', function() {
@@ -1517,6 +1554,14 @@ body {
         }
         isDraggingControl = false;
         isResizing = false;
+        if (isSplitterDragging) {
+            isSplitterDragging = false;
+            activeSplitter = null;
+            var sl = document.getElementById('splitterLeft');
+            var sr = document.getElementById('splitterRight');
+            if (sl) sl.classList.remove('active');
+            if (sr) sr.classList.remove('active');
+        }
     });
 
     // =================== RESIZE ===================
@@ -1827,10 +1872,17 @@ body {
             }
             case 'documentUpdate': {
                 var parsed = parseHtmlContent(message.content);
-                if (!documentLoaded) {
-                    if (parsed && parsed.length > 0) {
-                        controls = parsed;
+                if (parsed) {
+                    var prevSelectedId = selectedId;
+                    controls = parsed;
+                    // Try to preserve selection
+                    var found = false;
+                    for (var si = 0; si < controls.length; si++) {
+                        if (controls[si].id === prevSelectedId) { found = true; break; }
                     }
+                    if (!found) selectedId = null;
+                }
+                if (!documentLoaded) {
                     documentLoaded = true;
                 }
                 render();
@@ -1839,6 +1891,32 @@ body {
             }
         }
     });
+
+    // =================== SPLITTER RESIZE ===================
+    var splitterLeft = document.getElementById('splitterLeft');
+    var splitterRight = document.getElementById('splitterRight');
+
+    if (splitterLeft) {
+        splitterLeft.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            isSplitterDragging = true;
+            activeSplitter = 'left';
+            splitterStartX = e.clientX;
+            splitterStartWidth = document.querySelector('.toolbox').offsetWidth;
+            splitterLeft.classList.add('active');
+        });
+    }
+
+    if (splitterRight) {
+        splitterRight.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            isSplitterDragging = true;
+            activeSplitter = 'right';
+            splitterStartX = e.clientX;
+            splitterStartWidth = document.getElementById('propertiesPanel').offsetWidth;
+            splitterRight.classList.add('active');
+        });
+    }
 
     // Signal ready
     vscode.postMessage({ type: 'ready' });
