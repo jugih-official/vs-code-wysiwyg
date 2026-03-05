@@ -2,6 +2,13 @@
 <br>
 <a href="https://www.buymeacoffee.com/jugih" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
+<form action="https://www.paypal.com/donate" method="post" target="_top">
+<input type="hidden" name="hosted_button_id" value="WGY835R5UWSRA" />
+<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+<img alt="" border="0" src="https://www.paypal.com/en_FI/i/scr/pixel.gif" width="1" height="1" />
+</form>
+
+
 # XAML / AXAML / Razor / HTML Visual Designer
 
 A VS Code extension that provides a full **WYSIWYG visual designer** for `.xaml`, `.axaml`, `.razor`, `.html`, and `.htm` files.  
