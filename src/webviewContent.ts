@@ -328,6 +328,56 @@ body {
     display: none;
     z-index: 50;
 }
+/* Panel splitter/resizer handles */
+.panel-splitter {
+    width: 5px;
+    cursor: col-resize;
+    background: transparent;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    transition: background 0.15s;
+}
+.panel-splitter:hover, .panel-splitter.active {
+    background: var(--control-selected);
+}
+.panel-splitter::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    left: -2px; right: -2px;
+}
+/* Canvas dimension inputs */
+.canvas-dims {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-color);
+    margin-right: 8px;
+}
+.canvas-dims label {
+    color: #888;
+    font-size: 10px;
+}
+.canvas-dims input {
+    width: 55px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-color);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    outline: none;
+}
+.canvas-dims input:focus {
+    border-color: var(--control-selected);
+}
+/* Container drop highlight */
+.design-control.drop-target {
+    outline: 2px dashed var(--control-selected);
+    outline-offset: -2px;
+}
 </style>
 </head>
 <body>
@@ -342,6 +392,10 @@ body {
     <button onclick="bringToFront()" title="Bring to Front"><svg viewBox="0 0 16 16"><path d="M3 13h10l-5-8z"/></svg> Front</button>
     <button onclick="sendToBack()" title="Send to Back"><svg viewBox="0 0 16 16"><path d="M3 3h10l-5 8z"/></svg> Back</button>
     <span class="separator"></span>
+    <span class="canvas-dims">
+        <label>W:</label><input type="number" id="canvasWidthInput" value="800" min="100" max="4000" title="Canvas Width">
+        <label>H:</label><input type="number" id="canvasHeightInput" value="500" min="100" max="4000" title="Canvas Height">
+    </span>
     <span class="auto-sync-badge" id="syncStatus" title="Changes auto-sync to document"><span class="sync-dot"></span> Auto-sync</span>
 </div>
 
@@ -529,6 +583,8 @@ body {
         </div>
     </div>
 
+    <div class="panel-splitter" id="splitterLeft"></div>
+
     <!-- CANVAS -->
     <div class="canvas-wrapper" id="canvasWrapper">
         <div style="position: relative;">
@@ -538,6 +594,8 @@ body {
             </div>
         </div>
     </div>
+
+    <div class="panel-splitter" id="splitterRight"></div>
 
     <!-- PROPERTIES PANEL -->
     <div class="properties-panel" id="propertiesPanel">
@@ -576,6 +634,12 @@ body {
     let dragOrigX = 0, dragOrigY = 0, dragOrigW = 0, dragOrigH = 0;
     let documentLoaded = false;
     let autoSyncTimer = null;
+    var canvasWidth = 800;
+    var canvasHeight = 500;
+    var isSplitterDragging = false;
+    var activeSplitter = null;
+    var splitterStartX = 0;
+    var splitterStartWidth = 0;
 
     // =================== AUTO-SYNC ===================
     function scheduleAutoSync() {
@@ -683,6 +747,115 @@ body {
         'HeaderedContentControl', 'ContentControl', 'ItemsControl',
         'Panel', 'RelativePanel', 'ItemsRepeater'];
 
+    // =================== TREE HELPERS ===================
+    function findControlById(id, list) {
+        if (!list) list = controls;
+        for (var i = 0; i < list.length; i++) {
+            if (list[i].id === id) return list[i];
+            if (list[i].children && list[i].children.length > 0) {
+                var found = findControlById(id, list[i].children);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+
+    function getAllControls(list) {
+        if (!list) list = controls;
+        var result = [];
+        for (var i = 0; i < list.length; i++) {
+            result.push(list[i]);
+            if (list[i].children && list[i].children.length > 0) {
+                result = result.concat(getAllControls(list[i].children));
+            }
+        }
+        return result;
+    }
+
+    function getAbsolutePosition(ctrl) {
+        var absX = ctrl.x;
+        var absY = ctrl.y;
+        if (ctrl.parentId) {
+            var parent = findControlById(ctrl.parentId);
+            if (parent) {
+                var pp = getAbsolutePosition(parent);
+                absX += pp.x;
+                absY += pp.y;
+            }
+        }
+        return { x: absX, y: absY };
+    }
+
+    function findContainerAtPoint(px, py, excludeId) {
+        var all = getAllControls();
+        var best = null;
+        var bestArea = Infinity;
+        for (var i = 0; i < all.length; i++) {
+            var c = all[i];
+            if (excludeId && c.id === excludeId) continue;
+            if (containerTypes.indexOf(c.type) < 0) continue;
+            var pos = getAbsolutePosition(c);
+            if (px >= pos.x && px <= pos.x + c.w && py >= pos.y && py <= pos.y + c.h) {
+                var area = c.w * c.h;
+                if (area < bestArea) {
+                    bestArea = area;
+                    best = c;
+                }
+            }
+        }
+        return best;
+    }
+
+    function reassignIds(ctrl) {
+        ctrl.id = nextId++;
+        if (ctrl.children) {
+            for (var i = 0; i < ctrl.children.length; i++) {
+                ctrl.children[i].parentId = ctrl.id;
+                reassignIds(ctrl.children[i]);
+            }
+        }
+    }
+
+    function removeControlFromTree(id) {
+        for (var i = 0; i < controls.length; i++) {
+            if (controls[i].id === id) {
+                controls.splice(i, 1);
+                return true;
+            }
+            if (removeFromChildren(controls[i], id)) return true;
+        }
+        return false;
+    }
+
+    function removeFromChildren(parent, id) {
+        if (!parent.children) return false;
+        for (var i = 0; i < parent.children.length; i++) {
+            if (parent.children[i].id === id) {
+                parent.children.splice(i, 1);
+                return true;
+            }
+            if (removeFromChildren(parent.children[i], id)) return true;
+        }
+        return false;
+    }
+
+    function updateRootTagDimension(attrName, value) {
+        var search = attrName + '="';
+        var idx = originalRootOpenTag.indexOf(search);
+        if (idx >= 0) {
+            var valStart = idx + search.length;
+            var valEnd = originalRootOpenTag.indexOf('"', valStart);
+            if (valEnd >= 0) {
+                originalRootOpenTag = originalRootOpenTag.substring(0, valStart) + value + originalRootOpenTag.substring(valEnd);
+            }
+        } else {
+            var closeIdx = originalRootOpenTag.lastIndexOf('>');
+            if (closeIdx >= 0) {
+                originalRootOpenTag = originalRootOpenTag.substring(0, closeIdx) + ' ' + attrName + '="' + value + '"' + originalRootOpenTag.substring(closeIdx);
+            }
+        }
+    }
+
     // =================== XAML PARSING ===================
     /**
      * Parse XAML file. Preserves root opening/closing tags EXACTLY.
@@ -690,15 +863,11 @@ body {
      */
     function parseXamlToControls(xmlText) {
         try {
-            // --- 1. Extract root open tag with ALL attributes using character scanning ---
-            // This preserves namespaces, Title, x:Class, mc:Ignorable, etc. exactly
             var rootTagMatch = xmlText.match(/^\\s*<([a-zA-Z_][a-zA-Z0-9_.:]*)/);
             if (!rootTagMatch) return null;
             originalRootTag = rootTagMatch[1];
             canvasLabel.textContent = originalRootTag;
 
-            // Find the end of the root opening tag by scanning chars
-            // We need to handle multi-line attributes and quoted values
             var inQuote = false;
             var quoteChar = '';
             var foundOpen = false;
@@ -727,7 +896,6 @@ body {
             if (rootOpenEnd === -1) return null;
             originalRootOpenTag = xmlText.substring(0, rootOpenEnd + 1);
 
-            // Find closing tag for the root element
             var closeIdx = xmlText.lastIndexOf('</' + originalRootTag);
             if (closeIdx >= 0) {
                 originalRootCloseTag = xmlText.substring(closeIdx).trim();
@@ -735,7 +903,6 @@ body {
                 originalRootCloseTag = '</' + originalRootTag + '>';
             }
 
-            // --- 2. Parse with DOMParser to extract controls ---
             var parser = new DOMParser();
             var doc = parser.parseFromString(xmlText, 'application/xml');
             var parseError = doc.querySelector('parsererror');
@@ -746,13 +913,17 @@ body {
 
             var root = doc.documentElement;
 
-            // Read design dimensions from root
             var dw = root.getAttribute('d:DesignWidth') || root.getAttribute('Width');
             var dh = root.getAttribute('d:DesignHeight') || root.getAttribute('Height');
-            if (dw) canvas.style.width = dw.replace(/[^0-9.]/g, '') + 'px';
-            if (dh) canvas.style.height = dh.replace(/[^0-9.]/g, '') + 'px';
+            if (dw) canvasWidth = parseFloat(dw.replace(/[^0-9.]/g, '')) || 800;
+            if (dh) canvasHeight = parseFloat(dh.replace(/[^0-9.]/g, '')) || 500;
+            canvas.style.width = canvasWidth + 'px';
+            canvas.style.height = canvasHeight + 'px';
+            var wInput = document.getElementById('canvasWidthInput');
+            var hInput = document.getElementById('canvasHeightInput');
+            if (wInput) wInput.value = canvasWidth;
+            if (hInput) hInput.value = canvasHeight;
 
-            // --- 3. Check for Canvas wrapper and preserve its opening tag ---
             hasCanvasWrapper = false;
             canvasWrapperOpenTag = '';
             var searchRoot = root;
@@ -761,7 +932,6 @@ body {
                 var child = root.children[ci];
                 if (child.localName === 'Canvas') {
                     hasCanvasWrapper = true;
-                    // Extract the Canvas open tag from the original text
                     var canvasOpenRegex = /<Canvas([\\s\\S]*?)>/;
                     var innerXml = xmlText.substring(rootOpenEnd + 1);
                     var canvasMatch = innerXml.match(canvasOpenRegex);
@@ -775,21 +945,28 @@ body {
                 }
             }
 
-            // --- 4. Walk children and extract known controls ---
             var parsed = [];
-            function walkChildren(parent) {
+            var globalIdx = [0];
+
+            function walkChildren(parent, parentCtrl) {
                 for (var j = 0; j < parent.children.length; j++) {
                     var el = parent.children[j];
                     var type = el.localName;
                     if (!controlDefaults[type]) {
-                        // Recurse into unknown containers
-                        walkChildren(el);
+                        walkChildren(el, parentCtrl);
                         continue;
                     }
 
                     var def = controlDefaults[type];
                     var marginStr = el.getAttribute('Margin') || '';
                     var marginParts = marginStr.split(',');
+                    var hasChildElements = el.children.length > 0;
+                    var contentVal = el.getAttribute('Content') || el.getAttribute('Text');
+                    if (!contentVal && !hasChildElements) {
+                        contentVal = el.textContent.trim();
+                    }
+                    contentVal = contentVal || def.content;
+
                     var ctrl = {
                         id: nextId++,
                         type: type,
@@ -798,12 +975,13 @@ body {
                         w: parseFloat(el.getAttribute('Width') || def.w),
                         h: parseFloat(el.getAttribute('Height') || def.h),
                         name: el.getAttribute('Name') || el.getAttribute('x:Name') || '',
-                        content: el.getAttribute('Content') || el.getAttribute('Text') || el.textContent.trim() || def.content,
+                        content: contentVal,
                         properties: {},
-                        zIndex: parsed.length + 1,
+                        zIndex: ++globalIdx[0],
+                        children: [],
+                        parentId: parentCtrl ? parentCtrl.id : null,
                     };
 
-                    // Gather ALL additional attributes to preserve on export
                     var skipAttrs = ['Width','Height','Canvas.Left','Canvas.Top','Content','Text','Name','x:Name'];
                     for (var ai = 0; ai < el.attributes.length; ai++) {
                         var attr = el.attributes[ai];
@@ -813,11 +991,19 @@ body {
                         ctrl.properties[n] = attr.value;
                     }
 
-                    parsed.push(ctrl);
+                    if (parentCtrl) {
+                        parentCtrl.children.push(ctrl);
+                    } else {
+                        parsed.push(ctrl);
+                    }
+
+                    if (containerTypes.indexOf(type) >= 0 && el.children.length > 0) {
+                        walkChildren(el, ctrl);
+                    }
                 }
             }
 
-            walkChildren(searchRoot);
+            walkChildren(searchRoot, null);
             return parsed;
         } catch(e) {
             console.error('XAML parse error', e);
@@ -832,61 +1018,74 @@ body {
      * Only regenerates the Canvas children.
      */
     function generateXaml() {
-        // If we never loaded a document, use a sensible default root
         if (!originalRootOpenTag) {
             originalRootOpenTag = '<Window\\n    xmlns="https://github.com/avaloniaui"\\n    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">';
             originalRootCloseTag = '</Window>';
             originalRootTag = 'Window';
         }
 
+        if (originalRootOpenTag.indexOf('d:DesignWidth') >= 0) {
+            updateRootTagDimension('d:DesignWidth', String(Math.round(canvasWidth)));
+            updateRootTagDimension('d:DesignHeight', String(Math.round(canvasHeight)));
+        } else {
+            updateRootTagDimension('Width', String(Math.round(canvasWidth)));
+            updateRootTagDimension('Height', String(Math.round(canvasHeight)));
+        }
+
         var NL = '\\n';
         var xaml = originalRootOpenTag + NL;
 
-        // Canvas wrapper
         if (hasCanvasWrapper && canvasWrapperOpenTag) {
             xaml += '    ' + canvasWrapperOpenTag + NL;
         } else {
             xaml += '    <Canvas>' + NL;
         }
 
-        // Generate child controls
         for (var i = 0; i < controls.length; i++) {
-            var ctrl = controls[i];
-            var isSelfClosing = !ctrl.content && containerTypes.indexOf(ctrl.type) < 0;
-            var line = '        <' + ctrl.type;
-
-            if (ctrl.name) line += ' x:Name="' + escXml(ctrl.name) + '"';
-            line += ' Canvas.Left="' + Math.round(ctrl.x) + '"';
-            line += ' Canvas.Top="' + Math.round(ctrl.y) + '"';
-            line += ' Width="' + Math.round(ctrl.w) + '"';
-            line += ' Height="' + Math.round(ctrl.h) + '"';
-
-            // Content/Text attribute
-            if (ctrl.content && contentTypes.indexOf(ctrl.type) >= 0) {
-                line += ' Content="' + escXml(ctrl.content) + '"';
-            } else if (ctrl.content && textTypes.indexOf(ctrl.type) >= 0) {
-                line += ' Text="' + escXml(ctrl.content) + '"';
-            }
-
-            // Preserve all extra properties from the original
-            var props = ctrl.properties || {};
-            var propKeys = Object.keys(props);
-            for (var pi = 0; pi < propKeys.length; pi++) {
-                line += ' ' + propKeys[pi] + '="' + escXml(props[propKeys[pi]]) + '"';
-            }
-
-            if (isSelfClosing) {
-                line += ' />' + NL;
-            } else {
-                line += '></' + ctrl.type + '>' + NL;
-            }
-            xaml += line;
+            xaml += generateControlXaml(controls[i], '        ');
         }
 
-        // Close Canvas and root
         xaml += '    </Canvas>' + NL;
         xaml += originalRootCloseTag + NL;
         return xaml;
+    }
+
+    function generateControlXaml(ctrl, indent) {
+        var NL = '\\n';
+        var hasChildren = ctrl.children && ctrl.children.length > 0;
+        var isSelfClosing = !ctrl.content && containerTypes.indexOf(ctrl.type) < 0 && !hasChildren;
+        var line = indent + '<' + ctrl.type;
+
+        if (ctrl.name) line += ' x:Name="' + escXml(ctrl.name) + '"';
+        line += ' Canvas.Left="' + Math.round(ctrl.x) + '"';
+        line += ' Canvas.Top="' + Math.round(ctrl.y) + '"';
+        line += ' Width="' + Math.round(ctrl.w) + '"';
+        line += ' Height="' + Math.round(ctrl.h) + '"';
+
+        if (ctrl.content && contentTypes.indexOf(ctrl.type) >= 0) {
+            line += ' Content="' + escXml(ctrl.content) + '"';
+        } else if (ctrl.content && textTypes.indexOf(ctrl.type) >= 0) {
+            line += ' Text="' + escXml(ctrl.content) + '"';
+        }
+
+        var props = ctrl.properties || {};
+        var propKeys = Object.keys(props);
+        for (var pi = 0; pi < propKeys.length; pi++) {
+            line += ' ' + propKeys[pi] + '="' + escXml(props[propKeys[pi]]) + '"';
+        }
+
+        if (isSelfClosing) {
+            line += ' />' + NL;
+        } else {
+            line += '>' + NL;
+            if (hasChildren) {
+                for (var ci = 0; ci < ctrl.children.length; ci++) {
+                    line += generateControlXaml(ctrl.children[ci], indent + '    ');
+                }
+            }
+            line += indent + '</' + ctrl.type + '>' + NL;
+        }
+        return line;
     }
 
     function escXml(s) {
@@ -898,14 +1097,21 @@ body {
         canvas.querySelectorAll('.design-control').forEach(function(el) { el.remove(); });
         canvas.querySelectorAll('.resize-handle').forEach(function(el) { el.remove(); });
 
-        for (var i = 0; i < controls.length; i++) {
-            var ctrl = controls[i];
+        renderControlList(controls, 0, 0);
+    }
+
+    function renderControlList(list, offsetX, offsetY) {
+        for (var i = 0; i < list.length; i++) {
+            var ctrl = list[i];
+            var absX = ctrl.x + offsetX;
+            var absY = ctrl.y + offsetY;
+
             var el = document.createElement('div');
             el.className = 'design-control' + (ctrl.id === selectedId ? ' selected' : '');
             el.dataset.id = ctrl.id;
             el.dataset.type = ctrl.type;
-            el.style.left = ctrl.x + 'px';
-            el.style.top = ctrl.y + 'px';
+            el.style.left = absX + 'px';
+            el.style.top = absY + 'px';
             el.style.width = ctrl.w + 'px';
             el.style.height = ctrl.h + 'px';
             el.style.zIndex = ctrl.zIndex || 1;
@@ -938,7 +1144,7 @@ body {
                     hel.style.zIndex = 101;
                     hel.style.position = 'absolute';
 
-                    var px = ctrl.x, py = ctrl.y, pw = ctrl.w, ph = ctrl.h;
+                    var px = absX, py = absY, pw = ctrl.w, ph = ctrl.h;
                     if (h.indexOf('n') >= 0) hel.style.top = (py - 4) + 'px';
                     if (h.indexOf('s') >= 0) hel.style.top = (py + ph - 4) + 'px';
                     if (h === 'e' || h === 'w') hel.style.top = (py + ph/2 - 4) + 'px';
@@ -956,6 +1162,10 @@ body {
 
                     canvas.appendChild(hel);
                 }
+            }
+
+            if (ctrl.children && ctrl.children.length > 0) {
+                renderControlList(ctrl.children, absX, absY);
             }
         }
     }
@@ -1090,9 +1300,8 @@ body {
         selectedId = id;
         render();
         updateProperties();
-        // Cursor sync: notify provider of element selection
         if (id !== null) {
-            var ctrl = controls.find(function(c) { return c.id === id; });
+            var ctrl = findControlById(id);
             if (ctrl) {
                 vscode.postMessage({ type: 'selectElement', elementType: ctrl.type, elementName: ctrl.name || '' });
             }
@@ -1136,6 +1345,13 @@ body {
         dropIndicator.style.top = (y - def.h/2) + 'px';
         dropIndicator.style.width = def.w + 'px';
         dropIndicator.style.height = def.h + 'px';
+        // Highlight container targets
+        canvas.querySelectorAll('.drop-target').forEach(function(el) { el.classList.remove('drop-target'); });
+        var target = findContainerAtPoint(x, y);
+        if (target) {
+            var targetEl = canvas.querySelector('[data-id="' + target.id + '"]');
+            if (targetEl) targetEl.classList.add('drop-target');
+        }
     });
 
     canvas.addEventListener('dragleave', function() {
@@ -1145,28 +1361,51 @@ body {
     canvas.addEventListener('drop', function(e) {
         e.preventDefault();
         dropIndicator.style.display = 'none';
+        // Remove drop-target highlights
+        canvas.querySelectorAll('.drop-target').forEach(function(el) { el.classList.remove('drop-target'); });
         var type = e.dataTransfer.getData('text/plain');
         if (!type || !controlDefaults[type]) return;
 
         var rect = canvas.getBoundingClientRect();
         var def = controlDefaults[type];
-        var x = Math.max(0, e.clientX - rect.left - def.w/2);
-        var y = Math.max(0, e.clientY - rect.top - def.h/2);
+        var dropX = e.clientX - rect.left;
+        var dropY = e.clientY - rect.top;
+
+        var targetContainer = findContainerAtPoint(dropX, dropY);
 
         saveUndo();
+
+        var relX, relY;
+        if (targetContainer) {
+            var parentPos = getAbsolutePosition(targetContainer);
+            relX = Math.max(0, Math.round(dropX - parentPos.x - def.w/2));
+            relY = Math.max(0, Math.round(dropY - parentPos.y - def.h/2));
+        } else {
+            relX = Math.max(0, Math.round(dropX - def.w/2));
+            relY = Math.max(0, Math.round(dropY - def.h/2));
+        }
+
         var ctrl = {
             id: nextId++,
             type: type,
-            x: Math.round(x),
-            y: Math.round(y),
+            x: relX,
+            y: relY,
             w: def.w,
             h: def.h,
             name: '',
             content: def.content,
             properties: {},
-            zIndex: controls.length + 1,
+            zIndex: (targetContainer ? targetContainer.children.length : controls.length) + 1,
+            children: [],
+            parentId: targetContainer ? targetContainer.id : null,
         };
-        controls.push(ctrl);
+
+        if (targetContainer) {
+            targetContainer.children.push(ctrl);
+        } else {
+            controls.push(ctrl);
+        }
+
         selectControl(ctrl.id);
         scheduleAutoSync();
     });
@@ -1182,7 +1421,7 @@ body {
 
     document.addEventListener('mousemove', function(e) {
         if (isDraggingControl && selectedId !== null) {
-            var ctrl = controls.find(function(c) { return c.id === selectedId; });
+            var ctrl = findControlById(selectedId);
             if (!ctrl) return;
             var dx = e.clientX - dragStartX;
             var dy = e.clientY - dragStartY;
@@ -1194,6 +1433,16 @@ body {
         if (isResizing && selectedId !== null) {
             handleResize(e);
         }
+        if (isSplitterDragging && activeSplitter) {
+            var dx = e.clientX - splitterStartX;
+            if (activeSplitter === 'left') {
+                var newW = Math.max(100, Math.min(400, splitterStartWidth + dx));
+                document.querySelector('.toolbox').style.width = newW + 'px';
+            } else if (activeSplitter === 'right') {
+                var newW = Math.max(120, Math.min(500, splitterStartWidth - dx));
+                document.getElementById('propertiesPanel').style.width = newW + 'px';
+            }
+        }
     });
 
     document.addEventListener('mouseup', function() {
@@ -1202,6 +1451,14 @@ body {
         }
         isDraggingControl = false;
         isResizing = false;
+        if (isSplitterDragging) {
+            isSplitterDragging = false;
+            activeSplitter = null;
+            var sl = document.getElementById('splitterLeft');
+            var sr = document.getElementById('splitterRight');
+            if (sl) sl.classList.remove('active');
+            if (sr) sr.classList.remove('active');
+        }
     });
 
     // =================== RESIZE ===================
@@ -1218,7 +1475,7 @@ body {
     }
 
     function handleResize(e) {
-        var ctrl = controls.find(function(c) { return c.id === selectedId; });
+        var ctrl = findControlById(selectedId);
         if (!ctrl) return;
 
         var dx = e.clientX - dragStartX;
@@ -1539,7 +1796,7 @@ body {
             return;
         }
 
-        var ctrl = controls.find(function(c) { return c.id === selectedId; });
+        var ctrl = findControlById(selectedId);
         if (!ctrl) { noSel.style.display = 'block'; fields.style.display = 'none'; return; }
 
         noSel.style.display = 'none';
@@ -1684,7 +1941,7 @@ body {
     window.deleteSelected = function() {
         if (selectedId === null) return;
         saveUndo();
-        controls = controls.filter(function(c) { return c.id !== selectedId; });
+        removeControlFromTree(selectedId);
         selectedId = null;
         render();
         updateProperties();
@@ -1694,15 +1951,24 @@ body {
 
     window.duplicateSelected = function() {
         if (selectedId === null) return;
-        var ctrl = controls.find(function(c) { return c.id === selectedId; });
+        var ctrl = findControlById(selectedId);
         if (!ctrl) return;
         saveUndo();
         var dup = JSON.parse(JSON.stringify(ctrl));
-        dup.id = nextId++;
+        reassignIds(dup);
         dup.x += 20;
         dup.y += 20;
         dup.name = '';
-        controls.push(dup);
+        if (ctrl.parentId) {
+            var parent = findControlById(ctrl.parentId);
+            if (parent) {
+                dup.parentId = parent.id;
+                parent.children.push(dup);
+            }
+        } else {
+            dup.parentId = null;
+            controls.push(dup);
+        }
         selectControl(dup.id);
         hideContextMenu();
         scheduleAutoSync();
@@ -1710,16 +1976,18 @@ body {
 
     window.bringToFront = function() {
         if (selectedId === null) return;
-        var maxZ = Math.max.apply(null, controls.map(function(c) { return c.zIndex || 1; }).concat([0]));
-        var ctrl = controls.find(function(c) { return c.id === selectedId; });
+        var all = getAllControls();
+        var maxZ = Math.max.apply(null, all.map(function(c) { return c.zIndex || 1; }).concat([0]));
+        var ctrl = findControlById(selectedId);
         if (ctrl) { ctrl.zIndex = maxZ + 1; render(); scheduleAutoSync(); }
         hideContextMenu();
     };
 
     window.sendToBack = function() {
         if (selectedId === null) return;
-        var minZ = Math.min.apply(null, controls.map(function(c) { return c.zIndex || 1; }).concat([999]));
-        var ctrl = controls.find(function(c) { return c.id === selectedId; });
+        var all = getAllControls();
+        var minZ = Math.min.apply(null, all.map(function(c) { return c.zIndex || 1; }).concat([999]));
+        var ctrl = findControlById(selectedId);
         if (ctrl) { ctrl.zIndex = Math.max(1, minZ - 1); render(); scheduleAutoSync(); }
         hideContextMenu();
     };
@@ -1758,7 +2026,7 @@ body {
         if (selectedId !== null && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.key) >= 0) {
             if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
             e.preventDefault();
-            var ctrl = controls.find(function(c) { return c.id === selectedId; });
+            var ctrl = findControlById(selectedId);
             if (!ctrl) return;
             var step = e.shiftKey ? 10 : 1;
             saveUndo();
@@ -1780,8 +2048,9 @@ body {
                 var elemType = message.elementType || '';
                 var elemName = message.elementName || '';
                 var found = null;
-                for (var hi = 0; hi < controls.length; hi++) {
-                    var c = controls[hi];
+                var allCtrls = getAllControls();
+                for (var hi = 0; hi < allCtrls.length; hi++) {
+                    var c = allCtrls[hi];
                     if (c.type === elemType) {
                         if (!elemName || c.name === elemName) {
                             found = c;
@@ -1797,12 +2066,17 @@ body {
                 break;
             }
             case 'documentUpdate': {
-                // Always re-parse to capture original structure
                 var parsed = parseXamlToControls(message.content);
-                if (!documentLoaded) {
-                    if (parsed && parsed.length > 0) {
-                        controls = parsed;
+                if (parsed) {
+                    var prevSelectedId = selectedId;
+                    controls = parsed;
+                    if (prevSelectedId !== null && findControlById(prevSelectedId)) {
+                        selectedId = prevSelectedId;
+                    } else {
+                        selectedId = null;
                     }
+                }
+                if (!documentLoaded) {
                     documentLoaded = true;
                 }
                 render();
@@ -1811,6 +2085,58 @@ body {
             }
         }
     });
+
+    // =================== SPLITTER RESIZE ===================
+    var splitterLeft = document.getElementById('splitterLeft');
+    var splitterRight = document.getElementById('splitterRight');
+
+    if (splitterLeft) {
+        splitterLeft.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            isSplitterDragging = true;
+            activeSplitter = 'left';
+            splitterStartX = e.clientX;
+            splitterStartWidth = document.querySelector('.toolbox').offsetWidth;
+            splitterLeft.classList.add('active');
+        });
+    }
+
+    if (splitterRight) {
+        splitterRight.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            isSplitterDragging = true;
+            activeSplitter = 'right';
+            splitterStartX = e.clientX;
+            splitterStartWidth = document.getElementById('propertiesPanel').offsetWidth;
+            splitterRight.classList.add('active');
+        });
+    }
+
+    // =================== CANVAS DIMENSION INPUTS ===================
+    var canvasWidthInput = document.getElementById('canvasWidthInput');
+    var canvasHeightInput = document.getElementById('canvasHeightInput');
+
+    if (canvasWidthInput) {
+        canvasWidthInput.addEventListener('change', function() {
+            var val = parseInt(canvasWidthInput.value) || 800;
+            val = Math.max(100, Math.min(4000, val));
+            canvasWidth = val;
+            canvas.style.width = canvasWidth + 'px';
+            canvasWidthInput.value = canvasWidth;
+            scheduleAutoSync();
+        });
+    }
+
+    if (canvasHeightInput) {
+        canvasHeightInput.addEventListener('change', function() {
+            var val = parseInt(canvasHeightInput.value) || 500;
+            val = Math.max(100, Math.min(4000, val));
+            canvasHeight = val;
+            canvas.style.height = canvasHeight + 'px';
+            canvasHeightInput.value = canvasHeight;
+            scheduleAutoSync();
+        });
+    }
 
     // Signal ready
     vscode.postMessage({ type: 'ready' });
