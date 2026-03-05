@@ -1,7 +1,7 @@
 # Firstly, if You like my work and it really helped you, please consider buying me a coffee (beer). Much obliged!
 <br>
 <a href="https://www.buymeacoffee.com/jugih" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
-
+<br>
 <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WGY835R5UWSRA">
   <img src="https://raw.githubusercontent.com/jugih-official/vs-code-wysiwyg/master/paypal-donate-button.png" alt="Donate with PayPal" style="width:20%;" />
 </a>
