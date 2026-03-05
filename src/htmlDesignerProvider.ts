@@ -25,14 +25,27 @@ export class HtmlDesignerProvider implements vscode.CustomTextEditorProvider {
             });
         };
 
+        // Debounce document change events to avoid excessive updates
+        let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+        const debouncedSendDocument = () => {
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+            debounceTimer = setTimeout(sendDocumentToWebview, 100);
+        };
+
         // Listen for text document changes (external edits)
         const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument((e: vscode.TextDocumentChangeEvent) => {
             if (e.document.uri.toString() === document.uri.toString()) {
-                sendDocumentToWebview();
+                debouncedSendDocument();
             }
         });
 
         webviewPanel.onDidDispose(() => {
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+                debounceTimer = undefined;
+            }
             changeDocumentSubscription.dispose();
         });
 
@@ -49,13 +62,17 @@ export class HtmlDesignerProvider implements vscode.CustomTextEditorProvider {
         });
     }
 
-    private updateDocument(document: vscode.TextDocument, content: string) {
+    private async updateDocument(document: vscode.TextDocument, content: string): Promise<void> {
         const edit = new vscode.WorkspaceEdit();
         edit.replace(
             document.uri,
             new vscode.Range(0, 0, document.lineCount, 0),
             content
         );
-        vscode.workspace.applyEdit(edit);
+        try {
+            await vscode.workspace.applyEdit(edit);
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to update document: ${error}`);
+        }
     }
 }

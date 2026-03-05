@@ -35,10 +35,18 @@ export class HtmlPreviewProvider {
             }
         );
 
-        // Watch for file changes
+        // Watch for file changes (debounced)
+        let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+        const debouncedUpdate = () => {
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+            debounceTimer = setTimeout(() => this.updatePreview(), 150);
+        };
+
         const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument((e) => {
             if (this.documentUri && e.document.uri.toString() === this.documentUri.toString()) {
-                this.updatePreview();
+                debouncedUpdate();
             }
         });
 
@@ -52,6 +60,10 @@ export class HtmlPreviewProvider {
         this.disposables.push(changeDocumentSubscription, saveDocumentSubscription);
 
         this.panel.onDidDispose(() => {
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+                debounceTimer = undefined;
+            }
             this.panel = undefined;
             this.disposables.forEach(d => d.dispose());
             this.disposables = [];
