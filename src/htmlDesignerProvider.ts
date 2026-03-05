@@ -45,6 +45,7 @@ export class HtmlDesignerProvider implements vscode.CustomTextEditorProvider {
 
         // Listen for text editor selection changes (cursor sync: text → visual)
         const selectionChangeSubscription = vscode.window.onDidChangeTextEditorSelection((e: vscode.TextEditorSelectionChangeEvent) => {
+            if (e.selections.length === 0) { return; }
             if (e.textEditor.document.uri.toString() === document.uri.toString() && webviewPanel.visible) {
                 const line = e.selections[0].active.line;
                 const lineText = document.lineAt(line).text;
@@ -90,13 +91,13 @@ export class HtmlDesignerProvider implements vscode.CustomTextEditorProvider {
                         const line = lines[i];
                         if (line.indexOf('<' + elemType) >= 0) {
                             if (!elemName || line.indexOf('id="' + elemName + '"') >= 0 || line.indexOf('class="' + elemName + '"') >= 0) {
-                                const range = new vscode.Range(i, 0, i, lines[i].length);
+                                const range = new vscode.Range(i, 0, i, line.length);
                                 const editors = vscode.window.visibleTextEditors.filter(
                                     e => e.document.uri.toString() === document.uri.toString()
                                 );
                                 if (editors.length > 0) {
                                     editors[0].revealRange(range, vscode.TextEditorRevealType.InCenter);
-                                    editors[0].selection = new vscode.Selection(i, 0, i, lines[i].length);
+                                    editors[0].selection = new vscode.Selection(i, 0, i, line.length);
                                 }
                                 break;
                             }
