@@ -5,7 +5,7 @@
   "version": "1.0.2",
   "publisher": "jugih-official",
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.85.0"
   },
   "categories": [
     "Other"
@@ -54,27 +54,36 @@
     "commands": [
       {
         "command": "xamlDesigner.openVisualEditor",
-        "title": "Open with XAML Visual Designer"
+        "title": "Open with XAML Visual Designer",
+        "category": "WYSIWYG Designer"
       },
       {
         "command": "xamlDesigner.openRazorVisualEditor",
-        "title": "Open with Razor Visual Designer"
+        "title": "Open with Razor Visual Designer",
+        "category": "WYSIWYG Designer"
       },
       {
         "command": "xamlDesigner.openHtmlVisualEditor",
-        "title": "Open with HTML Visual Designer"
+        "title": "Open with HTML Visual Designer",
+        "category": "WYSIWYG Designer"
       },
       {
         "command": "xamlDesigner.previewHtml",
-        "title": "Preview HTML in Side Panel"
+        "title": "Preview HTML in Side Panel",
+        "category": "WYSIWYG Designer",
+        "icon": "$(open-preview)"
       },
       {
         "command": "xamlDesigner.previewXaml",
-        "title": "Preview XAML/AXAML in Side Panel"
+        "title": "Preview XAML/AXAML in Side Panel",
+        "category": "WYSIWYG Designer",
+        "icon": "$(open-preview)"
       },
       {
         "command": "xamlDesigner.previewRazor",
-        "title": "Preview Razor in Side Panel"
+        "title": "Preview Razor in Side Panel",
+        "category": "WYSIWYG Designer",
+        "icon": "$(open-preview)"
       }
     ],
     "menus": {
@@ -109,8 +118,88 @@
           "when": "resourceExtname == .razor",
           "group": "navigation"
         }
+      ],
+      "editor/title": [
+        {
+          "command": "xamlDesigner.previewXaml",
+          "when": "resourceExtname == .xaml || resourceExtname == .axaml",
+          "group": "navigation"
+        },
+        {
+          "command": "xamlDesigner.previewRazor",
+          "when": "resourceExtname == .razor",
+          "group": "navigation"
+        },
+        {
+          "command": "xamlDesigner.previewHtml",
+          "when": "resourceExtname == .html || resourceExtname == .htm",
+          "group": "navigation"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "xamlDesigner.openVisualEditor",
+          "when": "resourceExtname == .xaml || resourceExtname == .axaml",
+          "group": "navigation"
+        },
+        {
+          "command": "xamlDesigner.openRazorVisualEditor",
+          "when": "resourceExtname == .razor",
+          "group": "navigation"
+        },
+        {
+          "command": "xamlDesigner.openHtmlVisualEditor",
+          "when": "resourceExtname == .html || resourceExtname == .htm",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "xamlDesigner.openVisualEditor",
+          "when": "resourceExtname == .xaml || resourceExtname == .axaml"
+        },
+        {
+          "command": "xamlDesigner.openRazorVisualEditor",
+          "when": "resourceExtname == .razor"
+        },
+        {
+          "command": "xamlDesigner.openHtmlVisualEditor",
+          "when": "resourceExtname == .html || resourceExtname == .htm"
+        },
+        {
+          "command": "xamlDesigner.previewXaml",
+          "when": "resourceExtname == .xaml || resourceExtname == .axaml"
+        },
+        {
+          "command": "xamlDesigner.previewRazor",
+          "when": "resourceExtname == .razor"
+        },
+        {
+          "command": "xamlDesigner.previewHtml",
+          "when": "resourceExtname == .html || resourceExtname == .htm"
+        }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "xamlDesigner.previewXaml",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v",
+        "when": "resourceExtname == .xaml || resourceExtname == .axaml"
+      },
+      {
+        "command": "xamlDesigner.previewRazor",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v",
+        "when": "resourceExtname == .razor"
+      },
+      {
+        "command": "xamlDesigner.previewHtml",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v",
+        "when": "resourceExtname == .html || resourceExtname == .htm"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -119,12 +208,9 @@
     "package": "npx @vscode/vsce package --allow-missing-repository"
   },
   "devDependencies": {
-    "@types/node": "^18.19.0",
-    "@types/vscode": "^1.80.0",
-    "@vscode/vsce": "^2.22.0",
-    "typescript": "^5.3.3"
-  },
-  "overrides": {
-    "undici": "5.28.4"
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.2",
+    "typescript": "^5.7.3"
   }
 }
