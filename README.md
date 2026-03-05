@@ -160,7 +160,7 @@ After a successful run you will find a `.vsix` file in the project root, e.g. `x
 Alternatively, install via the command line:
 
 ```bash
-code --install-extension xaml-axaml-designer-0.1.0.vsix
+code --install-extension xaml-axaml-designer-x.y.z.vsix
 ```
 
 ### Run in Extension Development Host
