@@ -62,6 +62,7 @@ export class HtmlPreviewProvider {
         this.panel.onDidDispose(() => {
             if (debounceTimer) {
                 clearTimeout(debounceTimer);
+                debounceTimer = undefined;
             }
             this.panel = undefined;
             this.disposables.forEach(d => d.dispose());

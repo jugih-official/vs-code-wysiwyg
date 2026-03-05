@@ -47,6 +47,7 @@ export class XamlDesignerProvider implements vscode.CustomTextEditorProvider {
         webviewPanel.onDidDispose(() => {
             if (debounceTimer) {
                 clearTimeout(debounceTimer);
+                debounceTimer = undefined;
             }
             changeDocumentSubscription.dispose();
         });

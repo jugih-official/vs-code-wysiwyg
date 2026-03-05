@@ -44,6 +44,7 @@ export class RazorDesignerProvider implements vscode.CustomTextEditorProvider {
         webviewPanel.onDidDispose(() => {
             if (debounceTimer) {
                 clearTimeout(debounceTimer);
+                debounceTimer = undefined;
             }
             changeDocumentSubscription.dispose();
         });
