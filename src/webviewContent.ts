@@ -640,6 +640,17 @@ body {
     var activeSplitter = null;
     var splitterStartX = 0;
     var splitterStartWidth = 0;
+    var renderPending = false;
+
+    function scheduleRender() {
+        if (!renderPending) {
+            renderPending = true;
+            requestAnimationFrame(function() {
+                renderPending = false;
+                render();
+            });
+        }
+    }
 
     // =================== AUTO-SYNC ===================
     function scheduleAutoSync() {
@@ -760,13 +771,13 @@ body {
         return null;
     }
 
-    function getAllControls(list) {
+    function getAllControls(list, result) {
         if (!list) list = controls;
-        var result = [];
+        if (!result) result = [];
         for (var i = 0; i < list.length; i++) {
             result.push(list[i]);
             if (list[i].children && list[i].children.length > 0) {
-                result = result.concat(getAllControls(list[i].children));
+                getAllControls(list[i].children, result);
             }
         }
         return result;
@@ -839,6 +850,15 @@ body {
         return false;
     }
 
+    function recalcNextId() {
+        var all = getAllControls();
+        var maxId = 0;
+        for (var i = 0; i < all.length; i++) {
+            if (all[i].id > maxId) maxId = all[i].id;
+        }
+        nextId = maxId + 1;
+    }
+
     function updateRootTagDimension(attrName, value) {
         var search = attrName + '="';
         var idx = originalRootOpenTag.indexOf(search);
@@ -849,9 +869,15 @@ body {
                 originalRootOpenTag = originalRootOpenTag.substring(0, valStart) + value + originalRootOpenTag.substring(valEnd);
             }
         } else {
-            var closeIdx = originalRootOpenTag.lastIndexOf('>');
+            // Insert new attribute before closing > or />
+            var closeIdx = originalRootOpenTag.lastIndexOf('/>');
             if (closeIdx >= 0) {
-                originalRootOpenTag = originalRootOpenTag.substring(0, closeIdx) + ' ' + attrName + '="' + value + '"' + originalRootOpenTag.substring(closeIdx);
+                originalRootOpenTag = originalRootOpenTag.substring(0, closeIdx).trimEnd() + ' ' + attrName + '="' + value + '" ' + originalRootOpenTag.substring(closeIdx);
+            } else {
+                closeIdx = originalRootOpenTag.lastIndexOf('>');
+                if (closeIdx >= 0) {
+                    originalRootOpenTag = originalRootOpenTag.substring(0, closeIdx) + ' ' + attrName + '="' + value + '"' + originalRootOpenTag.substring(closeIdx);
+                }
             }
         }
     }
@@ -863,6 +889,7 @@ body {
      */
     function parseXamlToControls(xmlText) {
         try {
+            nextId = 1;
             var rootTagMatch = xmlText.match(/^\\s*<([a-zA-Z_][a-zA-Z0-9_.:]*)/);
             if (!rootTagMatch) return null;
             originalRootTag = rootTagMatch[1];
@@ -1333,6 +1360,7 @@ body {
         });
     });
 
+    var lastContainerCheck = 0;
     canvas.addEventListener('dragover', function(e) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
@@ -1345,17 +1373,22 @@ body {
         dropIndicator.style.top = (y - def.h/2) + 'px';
         dropIndicator.style.width = def.w + 'px';
         dropIndicator.style.height = def.h + 'px';
-        // Highlight container targets
-        canvas.querySelectorAll('.drop-target').forEach(function(el) { el.classList.remove('drop-target'); });
-        var target = findContainerAtPoint(x, y);
-        if (target) {
-            var targetEl = canvas.querySelector('[data-id="' + target.id + '"]');
-            if (targetEl) targetEl.classList.add('drop-target');
+        // Throttle container highlight (every 100ms)
+        var now = Date.now();
+        if (now - lastContainerCheck > 100) {
+            lastContainerCheck = now;
+            canvas.querySelectorAll('.drop-target').forEach(function(el) { el.classList.remove('drop-target'); });
+            var target = findContainerAtPoint(x, y);
+            if (target) {
+                var targetEl = canvas.querySelector('[data-id="' + target.id + '"]');
+                if (targetEl) targetEl.classList.add('drop-target');
+            }
         }
     });
 
     canvas.addEventListener('dragleave', function() {
         dropIndicator.style.display = 'none';
+        canvas.querySelectorAll('.drop-target').forEach(function(el) { el.classList.remove('drop-target'); });
     });
 
     canvas.addEventListener('drop', function(e) {
@@ -1427,7 +1460,7 @@ body {
             var dy = e.clientY - dragStartY;
             ctrl.x = Math.max(0, dragOrigX + dx);
             ctrl.y = Math.max(0, dragOrigY + dy);
-            render();
+            scheduleRender();
             updateProperties();
         }
         if (isResizing && selectedId !== null) {
@@ -1499,7 +1532,7 @@ body {
         ctrl.y = Math.max(0, y);
         ctrl.w = w;
         ctrl.h = h;
-        render();
+        scheduleRender();
         updateProperties();
     }
 
@@ -1921,6 +1954,7 @@ body {
         if (undoStack.length === 0) return;
         redoStack.push(JSON.stringify(controls));
         controls = JSON.parse(undoStack.pop());
+        recalcNextId();
         selectedId = null;
         render();
         updateProperties();
@@ -1931,6 +1965,7 @@ body {
         if (redoStack.length === 0) return;
         undoStack.push(JSON.stringify(controls));
         controls = JSON.parse(redoStack.pop());
+        recalcNextId();
         selectedId = null;
         render();
         updateProperties();
