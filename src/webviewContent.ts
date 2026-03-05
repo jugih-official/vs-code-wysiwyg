@@ -48,17 +48,28 @@ body {
     flex-shrink: 0;
 }
 .toolbar button {
-    background: var(--control-bg);
-    border: 1px solid var(--control-border);
+    background: transparent;
+    border: 1px solid transparent;
     color: var(--text-color);
-    padding: 3px 10px;
-    border-radius: 3px;
+    padding: 4px 8px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s ease;
+    line-height: 1;
 }
-.toolbar button:hover { background: #4a4a4a; }
-.toolbar .separator { width: 1px; height: 20px; background: var(--toolbar-border); margin: 0 4px; }
-.toolbar .title { font-weight: 600; font-size: 13px; color: var(--text-bright); margin-right: 12px; }
+.toolbar button:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.1); }
+.toolbar button:active { background: rgba(255,255,255,0.12); }
+.toolbar button svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
+.toolbar .separator { width: 1px; height: 18px; background: rgba(255,255,255,0.1); margin: 0 6px; }
+.toolbar .title { font-weight: 600; font-size: 13px; color: var(--text-bright); margin-right: 14px; letter-spacing: 0.3px; }
+.auto-sync-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #4ec9b0; padding: 3px 10px; border-radius: 10px; background: rgba(78,201,176,0.1); border: 1px solid rgba(78,201,176,0.2); margin-left: auto; }
+.auto-sync-badge .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ec9b0; }
+.auto-sync-badge.syncing .sync-dot { animation: pulse 0.8s ease-in-out; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
 /* ============ MAIN LAYOUT ============ */
 .main-layout {
@@ -83,26 +94,28 @@ body {
     padding: 10px 10px 6px;
 }
 .toolbox-item {
-    padding: 6px 12px;
-    cursor: grab;
-    font-size: 12px;
     display: flex;
     align-items: center;
+    padding: 5px 10px;
+    cursor: grab;
+    font-size: 12px;
     gap: 8px;
-    user-select: none;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.12s ease;
 }
-.toolbox-item:hover { background: var(--toolbox-item-hover); }
+.toolbox-item:hover { background: rgba(255,255,255,0.06); }
+.toolbox-item:active { background: rgba(255,255,255,0.1); }
 .toolbox-item .icon {
-    width: 20px;
-    height: 16px;
-    border: 1px solid #666;
-    border-radius: 2px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 9px;
-    color: #999;
-    flex-shrink: 0;
+    background: rgba(0,122,204,0.15);
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #4fc1ff;
 }
 
 /* ============ CANVAS AREA ============ */
@@ -263,17 +276,17 @@ body {
     margin-bottom: 2px;
 }
 .prop-row input, .prop-row select {
+    width: 100%;
     background: var(--input-bg);
     border: 1px solid var(--input-border);
     color: var(--text-color);
-    padding: 3px 6px;
-    border-radius: 2px;
+    padding: 4px 8px;
+    border-radius: 6px;
     font-size: 12px;
+    transition: border-color 0.15s ease;
     outline: none;
 }
-.prop-row input:focus, .prop-row select:focus {
-    border-color: var(--control-selected);
-}
+.prop-row input:focus, .prop-row select:focus { border-color: var(--control-selected); }
 .no-selection {
     padding: 20px 10px;
     font-size: 12px;
@@ -286,22 +299,25 @@ body {
 .context-menu {
     position: fixed;
     background: #2d2d30;
-    border: 1px solid #454545;
-    border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    z-index: 10000;
-    min-width: 150px;
-    padding: 4px 0;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 4px;
+    min-width: 170px;
+    z-index: 200;
     display: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px);
 }
 .context-menu.visible { display: block; }
 .context-menu-item {
-    padding: 6px 16px;
+    padding: 6px 14px;
     font-size: 12px;
     cursor: pointer;
     color: var(--text-color);
+    border-radius: 4px;
+    transition: background 0.1s ease;
 }
-.context-menu-item:hover { background: #094771; color: var(--text-bright); }
+.context-menu-item:hover { background: rgba(0,122,204,0.3); color: var(--text-bright); }
 .context-menu-divider { height: 1px; background: #454545; margin: 4px 0; }
 
 .drop-indicator {
@@ -319,14 +335,14 @@ body {
 <!-- TOP TOOLBAR -->
 <div class="toolbar">
     <span class="title">XAML Designer</span>
-    <button onclick="undoAction()" title="Undo">&#8617; Undo</button>
-    <button onclick="redoAction()" title="Redo">&#8618; Redo</button>
+    <button onclick="undoAction()" title="Undo (Ctrl+Z)"><svg viewBox="0 0 16 16"><path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7h-1.5c0 3-2.5 5.5-5.5 5.5S2.5 11 2.5 8 5 2.5 8 2.5c1.5 0 2.8.6 3.9 1.5L9.5 6.5H15V1l-2.1 2.1C11.5 1.8 9.8 1 8 1z"/></svg> Undo</button>
+    <button onclick="redoAction()" title="Redo (Ctrl+Y)"><svg viewBox="0 0 16 16"><path d="M8 1c3.9 0 7 3.1 7 7s-3.1 7-7 7-7-3.1-7-7h1.5c0 3 2.5 5.5 5.5 5.5s5.5-2.5 5.5-5.5S11 2.5 8 2.5C6.5 2.5 5.2 3.1 4.1 4L6.5 6.5H1V1l2.1 2.1C4.5 1.8 6.2 1 8 1z"/></svg> Redo</button>
     <span class="separator"></span>
-    <button onclick="deleteSelected()" title="Delete selected">&#128465; Delete</button>
-    <button onclick="bringToFront()" title="Bring to front">&#11014; Front</button>
-    <button onclick="sendToBack()" title="Send to back">&#11015; Back</button>
+    <button onclick="deleteSelected()" title="Delete (Del)"><svg viewBox="0 0 16 16"><path d="M11 1.5v1h3.5v1h-1l-.9 10.1c-.1.8-.7 1.4-1.5 1.4H4.9c-.8 0-1.4-.6-1.5-1.4L2.5 3.5h-1v-1H5v-1c0-.6.4-1 1-1h4c.6 0 1 .4 1 1zm-5 0v1h4v-1H6zm5.5 2h-7l.9 10h5.2l.9-10z"/></svg> Delete</button>
+    <button onclick="bringToFront()" title="Bring to Front"><svg viewBox="0 0 16 16"><path d="M3 13h10l-5-8z"/></svg> Front</button>
+    <button onclick="sendToBack()" title="Send to Back"><svg viewBox="0 0 16 16"><path d="M3 3h10l-5 8z"/></svg> Back</button>
     <span class="separator"></span>
-    <button onclick="syncToXaml()" title="Sync visual to XAML">&#128190; Sync to XAML</button>
+    <span class="auto-sync-badge" id="syncStatus" title="Changes auto-sync to document"><span class="sync-dot"></span> Auto-sync</span>
 </div>
 
 <!-- MAIN LAYOUT -->
@@ -559,6 +575,21 @@ body {
     let dragStartX = 0, dragStartY = 0;
     let dragOrigX = 0, dragOrigY = 0, dragOrigW = 0, dragOrigH = 0;
     let documentLoaded = false;
+    let autoSyncTimer = null;
+
+    // =================== AUTO-SYNC ===================
+    function scheduleAutoSync() {
+        if (autoSyncTimer) clearTimeout(autoSyncTimer);
+        autoSyncTimer = setTimeout(function() {
+            autoSyncTimer = null;
+            window.syncToXaml();
+            var badge = document.getElementById('syncStatus');
+            if (badge) {
+                badge.classList.add('syncing');
+                setTimeout(function() { badge.classList.remove('syncing'); }, 800);
+            }
+        }, 300);
+    }
 
     // *** CRITICAL: preserve original document structure ***
     let originalRootOpenTag = '';     // full root opening tag with all xmlns, attributes, etc.
@@ -1059,6 +1090,13 @@ body {
         selectedId = id;
         render();
         updateProperties();
+        // Cursor sync: notify provider of element selection
+        if (id !== null) {
+            var ctrl = controls.find(function(c) { return c.id === id; });
+            if (ctrl) {
+                vscode.postMessage({ type: 'selectElement', elementType: ctrl.type, elementName: ctrl.name || '' });
+            }
+        }
     }
 
     canvas.addEventListener('mousedown', function(e) {
@@ -1130,6 +1168,7 @@ body {
         };
         controls.push(ctrl);
         selectControl(ctrl.id);
+        scheduleAutoSync();
     });
 
     // =================== DRAG EXISTING CONTROLS ===================
@@ -1158,6 +1197,9 @@ body {
     });
 
     document.addEventListener('mouseup', function() {
+        if (isDraggingControl || isResizing) {
+            scheduleAutoSync();
+        }
         isDraggingControl = false;
         isResizing = false;
     });
@@ -1461,6 +1503,7 @@ body {
                         c.properties[attr] = selEl.value;
                     }
                     render();
+                    scheduleAutoSync();
                 });
             })(propDef.attr, sel, ctrl);
             div.appendChild(sel);
@@ -1477,6 +1520,7 @@ body {
                         c.properties[attr] = inp.value;
                     }
                     render();
+                    scheduleAutoSync();
                 });
             })(propDef.attr, input, ctrl);
             div.appendChild(input);
@@ -1541,6 +1585,7 @@ body {
                     else if (r.key === 'name') c.name = inp.value;
                     else if (r.key === 'content') c.content = inp.value;
                     render();
+                    scheduleAutoSync();
                 });
             })(row, input, ctrl);
 
@@ -1590,6 +1635,7 @@ body {
                         c.properties[key] = inp.value;
                     }
                     render();
+                    scheduleAutoSync();
                 });
             })(pk, extraInp, ctrl);
             extraDiv.appendChild(extraInp);
@@ -1621,6 +1667,7 @@ body {
         selectedId = null;
         render();
         updateProperties();
+        scheduleAutoSync();
     };
 
     window.redoAction = function() {
@@ -1630,6 +1677,7 @@ body {
         selectedId = null;
         render();
         updateProperties();
+        scheduleAutoSync();
     };
 
     // =================== ACTIONS ===================
@@ -1641,6 +1689,7 @@ body {
         render();
         updateProperties();
         hideContextMenu();
+        scheduleAutoSync();
     };
 
     window.duplicateSelected = function() {
@@ -1656,13 +1705,14 @@ body {
         controls.push(dup);
         selectControl(dup.id);
         hideContextMenu();
+        scheduleAutoSync();
     };
 
     window.bringToFront = function() {
         if (selectedId === null) return;
         var maxZ = Math.max.apply(null, controls.map(function(c) { return c.zIndex || 1; }).concat([0]));
         var ctrl = controls.find(function(c) { return c.id === selectedId; });
-        if (ctrl) { ctrl.zIndex = maxZ + 1; render(); }
+        if (ctrl) { ctrl.zIndex = maxZ + 1; render(); scheduleAutoSync(); }
         hideContextMenu();
     };
 
@@ -1670,7 +1720,7 @@ body {
         if (selectedId === null) return;
         var minZ = Math.min.apply(null, controls.map(function(c) { return c.zIndex || 1; }).concat([999]));
         var ctrl = controls.find(function(c) { return c.id === selectedId; });
-        if (ctrl) { ctrl.zIndex = Math.max(1, minZ - 1); render(); }
+        if (ctrl) { ctrl.zIndex = Math.max(1, minZ - 1); render(); scheduleAutoSync(); }
         hideContextMenu();
     };
 
@@ -1718,6 +1768,7 @@ body {
             if (e.key === 'ArrowRight') ctrl.x += step;
             render();
             updateProperties();
+            scheduleAutoSync();
         }
     });
 
@@ -1725,6 +1776,26 @@ body {
     window.addEventListener('message', function(event) {
         var message = event.data;
         switch (message.type) {
+            case 'highlightElement': {
+                var elemType = message.elementType || '';
+                var elemName = message.elementName || '';
+                var found = null;
+                for (var hi = 0; hi < controls.length; hi++) {
+                    var c = controls[hi];
+                    if (c.type === elemType) {
+                        if (!elemName || c.name === elemName) {
+                            found = c;
+                            break;
+                        }
+                    }
+                }
+                if (found && found.id !== selectedId) {
+                    selectedId = found.id;
+                    render();
+                    updateProperties();
+                }
+                break;
+            }
             case 'documentUpdate': {
                 // Always re-parse to capture original structure
                 var parsed = parseXamlToControls(message.content);
