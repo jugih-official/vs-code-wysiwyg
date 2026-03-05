@@ -872,7 +872,7 @@ body {
             // Insert new attribute before closing > or />
             var closeIdx = originalRootOpenTag.lastIndexOf('/>');
             if (closeIdx >= 0) {
-                originalRootOpenTag = originalRootOpenTag.substring(0, closeIdx).trimEnd() + ' ' + attrName + '="' + value + '" ' + originalRootOpenTag.substring(closeIdx);
+                originalRootOpenTag = originalRootOpenTag.substring(0, closeIdx).trimEnd() + ' ' + attrName + '="' + value + '" ' + originalRootOpenTag.substring(closeIdx).trimStart();
             } else {
                 closeIdx = originalRootOpenTag.lastIndexOf('>');
                 if (closeIdx >= 0) {
