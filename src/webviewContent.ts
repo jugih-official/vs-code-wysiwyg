@@ -124,9 +124,14 @@ body {
     overflow: auto;
     background: #1a1a1a;
     position: relative;
+}
+.canvas-scroller {
+    min-width: 100%;
+    min-height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 40px;
 }
 .canvas-container {
     position: relative;
@@ -136,6 +141,14 @@ body {
     border: 2px solid var(--toolbar-border);
     box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     overflow: hidden;
+    transform-origin: 0 0;
+}
+.zoom-badge {
+    font-size: 11px;
+    color: #888;
+    margin-left: 4px;
+    cursor: pointer;
+    user-select: none;
 }
 .canvas-label {
     position: absolute;
@@ -397,6 +410,7 @@ body {
         <label>H:</label><input type="number" id="canvasHeightInput" value="500" min="100" max="4000" title="Canvas Height">
     </span>
     <span class="auto-sync-badge" id="syncStatus" title="Changes auto-sync to document"><span class="sync-dot"></span> Auto-sync</span>
+    <span class="zoom-badge" id="zoomBadge" title="Zoom level (click to reset)">100%</span>
 </div>
 
 <!-- MAIN LAYOUT -->
@@ -587,10 +601,12 @@ body {
 
     <!-- CANVAS -->
     <div class="canvas-wrapper" id="canvasWrapper">
-        <div style="position: relative;">
-            <span class="canvas-label" id="canvasLabel">Window</span>
-            <div class="canvas-container" id="designCanvas">
-                <div class="drop-indicator" id="dropIndicator"></div>
+        <div class="canvas-scroller" id="canvasScroller">
+            <div style="position: relative;">
+                <span class="canvas-label" id="canvasLabel">Window</span>
+                <div class="canvas-container" id="designCanvas">
+                    <div class="drop-indicator" id="dropIndicator"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -641,6 +657,12 @@ body {
     var splitterStartX = 0;
     var splitterStartWidth = 0;
     var renderPending = false;
+    var zoomLevel = 1;
+    var isPanning = false;
+    var panStartX = 0;
+    var panStartY = 0;
+    var panScrollStartX = 0;
+    var panScrollStartY = 0;
 
     function scheduleRender() {
         if (!renderPending) {
@@ -678,6 +700,54 @@ body {
     const propertiesPanel = document.getElementById('propertiesPanel');
     const contextMenu = document.getElementById('contextMenu');
     const canvasLabel = document.getElementById('canvasLabel');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+    const zoomBadge = document.getElementById('zoomBadge');
+
+    // =================== ZOOM & PAN ===================
+    function applyZoom() {
+        canvas.style.transform = 'scale(' + zoomLevel + ')';
+        zoomBadge.textContent = Math.round(zoomLevel * 100) + '%';
+    }
+
+    canvasWrapper.addEventListener('wheel', function(e) {
+        if (!e.ctrlKey) return;
+        e.preventDefault();
+        var delta = e.deltaY > 0 ? -0.1 : 0.1;
+        zoomLevel = Math.min(5, Math.max(0.1, zoomLevel + delta));
+        zoomLevel = Math.round(zoomLevel * 100) / 100;
+        applyZoom();
+    }, { passive: false });
+
+    zoomBadge.addEventListener('click', function() {
+        zoomLevel = 1;
+        applyZoom();
+    });
+
+    canvasWrapper.addEventListener('mousedown', function(e) {
+        if (e.button === 1) {
+            e.preventDefault();
+            isPanning = true;
+            panStartX = e.clientX;
+            panStartY = e.clientY;
+            panScrollStartX = canvasWrapper.scrollLeft;
+            panScrollStartY = canvasWrapper.scrollTop;
+            canvasWrapper.style.cursor = 'grabbing';
+        }
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (isPanning) {
+            canvasWrapper.scrollLeft = panScrollStartX - (e.clientX - panStartX);
+            canvasWrapper.scrollTop = panScrollStartY - (e.clientY - panStartY);
+        }
+    });
+
+    document.addEventListener('mouseup', function(e) {
+        if (isPanning) {
+            isPanning = false;
+            canvasWrapper.style.cursor = '';
+        }
+    });
 
     // =================== CONTROL DEFAULTS ===================
     const controlDefaults = {
@@ -1124,10 +1194,11 @@ body {
         canvas.querySelectorAll('.design-control').forEach(function(el) { el.remove(); });
         canvas.querySelectorAll('.resize-handle').forEach(function(el) { el.remove(); });
 
-        renderControlList(controls, 0, 0);
+        renderControlList(controls, 0, 0, 0);
     }
 
-    function renderControlList(list, offsetX, offsetY) {
+    function renderControlList(list, offsetX, offsetY, depth) {
+        if (depth === undefined) depth = 0;
         for (var i = 0; i < list.length; i++) {
             var ctrl = list[i];
             var absX = ctrl.x + offsetX;
@@ -1141,7 +1212,7 @@ body {
             el.style.top = absY + 'px';
             el.style.width = ctrl.w + 'px';
             el.style.height = ctrl.h + 'px';
-            el.style.zIndex = ctrl.zIndex || 1;
+            el.style.zIndex = (depth * 100) + (ctrl.zIndex || 1);
 
             el.innerHTML = renderControlInner(ctrl);
 
@@ -1168,7 +1239,7 @@ body {
                     var h = handles[hi];
                     var hel = document.createElement('div');
                     hel.className = 'resize-handle ' + h;
-                    hel.style.zIndex = 101;
+                    hel.style.zIndex = 10001;
                     hel.style.position = 'absolute';
 
                     var px = absX, py = absY, pw = ctrl.w, ph = ctrl.h;
@@ -1192,7 +1263,7 @@ body {
             }
 
             if (ctrl.children && ctrl.children.length > 0) {
-                renderControlList(ctrl.children, absX, absY);
+                renderControlList(ctrl.children, absX, absY, depth + 1);
             }
         }
     }
@@ -1365,8 +1436,8 @@ body {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
         var rect = canvas.getBoundingClientRect();
-        var x = e.clientX - rect.left;
-        var y = e.clientY - rect.top;
+        var x = (e.clientX - rect.left - canvas.clientLeft) / zoomLevel;
+        var y = (e.clientY - rect.top - canvas.clientTop) / zoomLevel;
         var def = controlDefaults[dragType] || { w: 100, h: 30 };
         dropIndicator.style.display = 'block';
         dropIndicator.style.left = (x - def.w/2) + 'px';
@@ -1401,8 +1472,8 @@ body {
 
         var rect = canvas.getBoundingClientRect();
         var def = controlDefaults[type];
-        var dropX = e.clientX - rect.left;
-        var dropY = e.clientY - rect.top;
+        var dropX = (e.clientX - rect.left - canvas.clientLeft) / zoomLevel;
+        var dropY = (e.clientY - rect.top - canvas.clientTop) / zoomLevel;
 
         var targetContainer = findContainerAtPoint(dropX, dropY);
 
@@ -1456,8 +1527,8 @@ body {
         if (isDraggingControl && selectedId !== null) {
             var ctrl = findControlById(selectedId);
             if (!ctrl) return;
-            var dx = e.clientX - dragStartX;
-            var dy = e.clientY - dragStartY;
+            var dx = (e.clientX - dragStartX) / zoomLevel;
+            var dy = (e.clientY - dragStartY) / zoomLevel;
             ctrl.x = Math.max(0, dragOrigX + dx);
             ctrl.y = Math.max(0, dragOrigY + dy);
             scheduleRender();
@@ -1511,8 +1582,8 @@ body {
         var ctrl = findControlById(selectedId);
         if (!ctrl) return;
 
-        var dx = e.clientX - dragStartX;
-        var dy = e.clientY - dragStartY;
+        var dx = (e.clientX - dragStartX) / zoomLevel;
+        var dy = (e.clientY - dragStartY) / zoomLevel;
         var minW = 20, minH = 16;
 
         var x = dragOrigX, y = dragOrigY, w = dragOrigW, h = dragOrigH;
