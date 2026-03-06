@@ -10,11 +10,12 @@ Much obliged!
 </a>
 
 
-
 # XAML / AXAML / Razor / HTML Visual Designer
 
 A VS Code extension that provides a full **WYSIWYG visual designer** for `.xaml`, `.axaml`, `.razor`, `.html`, and `.htm` files.  
-Design UIs by dragging controls onto a canvas — no hand-editing markup required. Changes sync back to the source file with a single click.
+Design UIs by dragging controls onto a canvas — no hand-editing markup required. Changes sync back to the source file with a single click. <br>
+Now on Vs Code marketplace:<br>
+https://marketplace.visualstudio.com/items?itemName=jugih-official.wysiwyg-designer
 
 ---
 
