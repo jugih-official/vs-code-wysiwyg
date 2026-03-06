@@ -124,9 +124,14 @@ body {
     overflow: auto;
     background: #1a1a1a;
     position: relative;
+}
+.canvas-scroller {
+    min-width: 100%;
+    min-height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 40px;
 }
 .canvas-container {
     position: relative;
@@ -136,6 +141,14 @@ body {
     border: 2px solid var(--toolbar-border);
     box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     overflow: hidden;
+    transform-origin: 0 0;
+}
+.zoom-badge {
+    font-size: 11px;
+    color: #888;
+    margin-left: 4px;
+    cursor: pointer;
+    user-select: none;
 }
 .canvas-label {
     position: absolute;
@@ -379,6 +392,7 @@ body {
     <button onclick="sendToBack()" title="Send to Back"><svg viewBox="0 0 16 16"><path d="M3 3h10l-5 8z"/></svg> Back</button>
     <span class="separator"></span>
     <span class="auto-sync-badge" id="syncStatus" title="Changes auto-sync to document"><span class="sync-dot"></span> Auto-sync</span>
+    <span class="zoom-badge" id="zoomBadge" title="Zoom level (click to reset)">100%</span>
 </div>
 
 <!-- MAIN LAYOUT -->
@@ -596,10 +610,12 @@ body {
 
     <!-- CANVAS -->
     <div class="canvas-wrapper" id="canvasWrapper">
-        <div style="position: relative;">
-            <span class="canvas-label" id="canvasLabel">HTML Document</span>
-            <div class="canvas-container" id="designCanvas">
-                <div class="drop-indicator" id="dropIndicator"></div>
+        <div class="canvas-scroller" id="canvasScroller">
+            <div style="position: relative;">
+                <span class="canvas-label" id="canvasLabel">HTML Document</span>
+                <div class="canvas-container" id="designCanvas">
+                    <div class="drop-indicator" id="dropIndicator"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -647,6 +663,12 @@ body {
     var splitterStartX = 0;
     var splitterStartWidth = 0;
     var autoSyncTimer = null;
+    var zoomLevel = 1;
+    var isPanning = false;
+    var panStartX = 0;
+    var panStartY = 0;
+    var panScrollStartX = 0;
+    var panScrollStartY = 0;
 
     // =================== AUTO-SYNC ===================
     function scheduleAutoSync() {
@@ -677,6 +699,54 @@ body {
     var propertiesPanel = document.getElementById('propertiesPanel');
     var contextMenu = document.getElementById('contextMenu');
     var canvasLabel = document.getElementById('canvasLabel');
+    var canvasWrapper = document.getElementById('canvasWrapper');
+    var zoomBadge = document.getElementById('zoomBadge');
+
+    // =================== ZOOM & PAN ===================
+    function applyZoom() {
+        canvas.style.transform = 'scale(' + zoomLevel + ')';
+        zoomBadge.textContent = Math.round(zoomLevel * 100) + '%';
+    }
+
+    canvasWrapper.addEventListener('wheel', function(e) {
+        if (!e.ctrlKey) return;
+        e.preventDefault();
+        var delta = e.deltaY > 0 ? -0.1 : 0.1;
+        zoomLevel = Math.min(5, Math.max(0.1, zoomLevel + delta));
+        zoomLevel = Math.round(zoomLevel * 100) / 100;
+        applyZoom();
+    }, { passive: false });
+
+    zoomBadge.addEventListener('click', function() {
+        zoomLevel = 1;
+        applyZoom();
+    });
+
+    canvasWrapper.addEventListener('mousedown', function(e) {
+        if (e.button === 1) {
+            e.preventDefault();
+            isPanning = true;
+            panStartX = e.clientX;
+            panStartY = e.clientY;
+            panScrollStartX = canvasWrapper.scrollLeft;
+            panScrollStartY = canvasWrapper.scrollTop;
+            canvasWrapper.style.cursor = 'grabbing';
+        }
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (isPanning) {
+            canvasWrapper.scrollLeft = panScrollStartX - (e.clientX - panStartX);
+            canvasWrapper.scrollTop = panScrollStartY - (e.clientY - panStartY);
+        }
+    });
+
+    document.addEventListener('mouseup', function(e) {
+        if (isPanning) {
+            isPanning = false;
+            canvasWrapper.style.cursor = '';
+        }
+    });
 
     // =================== CONTROL DEFAULTS ===================
     var controlDefaults = {
@@ -1469,8 +1539,8 @@ body {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
         var rect = canvas.getBoundingClientRect();
-        var x = e.clientX - rect.left;
-        var y = e.clientY - rect.top;
+        var x = (e.clientX - rect.left - canvas.clientLeft) / zoomLevel;
+        var y = (e.clientY - rect.top - canvas.clientTop) / zoomLevel;
         var def = controlDefaults[dragType] || { w: 100, h: 30 };
         dropIndicator.style.display = 'block';
         dropIndicator.style.left = (x - def.w/2) + 'px';
@@ -1491,8 +1561,8 @@ body {
 
         var rect = canvas.getBoundingClientRect();
         var def = controlDefaults[type];
-        var x = Math.max(0, e.clientX - rect.left - def.w/2);
-        var y = Math.max(0, e.clientY - rect.top - def.h/2);
+        var x = Math.max(0, (e.clientX - rect.left - canvas.clientLeft) / zoomLevel - def.w/2);
+        var y = Math.max(0, (e.clientY - rect.top - canvas.clientTop) / zoomLevel - def.h/2);
 
         saveUndo();
         var ctrl = {
@@ -1526,8 +1596,8 @@ body {
         if (isDraggingControl && selectedId !== null) {
             var ctrl = controls.find(function(c) { return c.id === selectedId; });
             if (!ctrl) return;
-            var dx = e.clientX - dragStartX;
-            var dy = e.clientY - dragStartY;
+            var dx = (e.clientX - dragStartX) / zoomLevel;
+            var dy = (e.clientY - dragStartY) / zoomLevel;
             ctrl.x = Math.max(0, dragOrigX + dx);
             ctrl.y = Math.max(0, dragOrigY + dy);
             render();
@@ -1581,8 +1651,8 @@ body {
         var ctrl = controls.find(function(c) { return c.id === selectedId; });
         if (!ctrl) return;
 
-        var dx = e.clientX - dragStartX;
-        var dy = e.clientY - dragStartY;
+        var dx = (e.clientX - dragStartX) / zoomLevel;
+        var dy = (e.clientY - dragStartY) / zoomLevel;
         var minW = 20, minH = 16;
 
         var x = dragOrigX, y = dragOrigY, w = dragOrigW, h = dragOrigH;
