@@ -13,6 +13,14 @@
   "categories": [
     "Other"
   ],
+"keywords": [
+  "wysiwyg",
+  "html editor",
+  "visual editor",
+  "rich text",
+  "preview"
+],
+  
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
