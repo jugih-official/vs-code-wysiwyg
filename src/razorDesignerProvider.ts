@@ -52,10 +52,26 @@ export class RazorDesignerProvider implements vscode.CustomTextEditorProvider {
                 const match = lineText.match(/<(\w+)[\s/>]/);
                 if (match) {
                     const nameMatch = lineText.match(/(?:id|class)="([^"]+)"/);
+                    const elemType = match[1];
+                    const elemName = nameMatch ? nameMatch[1] : '';
+                    // Count occurrences of same type+name before this line
+                    let occurrenceIndex = 0;
+                    for (let i = 0; i < line; i++) {
+                        const prevLine = document.lineAt(i).text;
+                        const prevMatch = prevLine.match(/<(\w+)[\s/>]/);
+                        if (prevMatch && prevMatch[1] === elemType) {
+                            const prevNameMatch = prevLine.match(/(?:id|class)="([^"]+)"/);
+                            const prevName = prevNameMatch ? prevNameMatch[1] : '';
+                            if (prevName === elemName) {
+                                occurrenceIndex++;
+                            }
+                        }
+                    }
                     webviewPanel.webview.postMessage({
                         type: 'highlightElement',
-                        elementType: match[1],
-                        elementName: nameMatch ? nameMatch[1] : '',
+                        elementType: elemType,
+                        elementName: elemName,
+                        occurrenceIndex: occurrenceIndex,
                         line: line,
                     });
                 }
@@ -72,7 +88,7 @@ export class RazorDesignerProvider implements vscode.CustomTextEditorProvider {
         });
 
         // Handle messages from webview
-        webviewPanel.webview.onDidReceiveMessage(async (message: { type: string; content?: string; elementType?: string; elementName?: string }) => {
+        webviewPanel.webview.onDidReceiveMessage(async (message: { type: string; content?: string; elementType?: string; elementName?: string; occurrenceIndex?: number }) => {
             switch (message.type) {
                 case 'ready':
                     sendDocumentToWebview();
@@ -87,19 +103,26 @@ export class RazorDesignerProvider implements vscode.CustomTextEditorProvider {
                     const lines = text.split('\n');
                     const elemType = message.elementType || '';
                     const elemName = message.elementName || '';
+                    const targetOccurrence = message.occurrenceIndex || 0;
+                    let matchIdx = 0;
                     for (let i = 0; i < lines.length; i++) {
                         const line = lines[i];
                         if (line.indexOf('<' + elemType) >= 0) {
-                            if (!elemName || line.indexOf('id="' + elemName + '"') >= 0 || line.indexOf('class="' + elemName + '"') >= 0) {
-                                const range = new vscode.Range(i, 0, i, line.length);
-                                const editors = vscode.window.visibleTextEditors.filter(
-                                    e => e.document.uri.toString() === document.uri.toString()
-                                );
-                                if (editors.length > 0) {
-                                    editors[0].revealRange(range, vscode.TextEditorRevealType.InCenter);
-                                    editors[0].selection = new vscode.Selection(i, 0, i, line.length);
+                            const nameMatch = line.match(/(?:id|class)="([^"]+)"/);
+                            const lineName = nameMatch ? nameMatch[1] : '';
+                            if (lineName === elemName) {
+                                if (matchIdx === targetOccurrence) {
+                                    const range = new vscode.Range(i, 0, i, line.length);
+                                    const editors = vscode.window.visibleTextEditors.filter(
+                                        e => e.document.uri.toString() === document.uri.toString()
+                                    );
+                                    if (editors.length > 0) {
+                                        editors[0].revealRange(range, vscode.TextEditorRevealType.InCenter);
+                                        editors[0].selection = new vscode.Selection(i, 0, i, line.length);
+                                    }
+                                    break;
                                 }
-                                break;
+                                matchIdx++;
                             }
                         }
                     }
