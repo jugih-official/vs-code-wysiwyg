@@ -19,6 +19,19 @@ https://marketplace.visualstudio.com/items?itemName=jugih-official.wysiwyg-desig
 
 ---
 
+## License Notice
+
+This project is source-available.
+
+Forking, redistribution, publishing modified versions,
+or republishing this extension in any marketplace is
+strictly prohibited without explicit permission from
+the author.
+
+See the LICENSE file for full terms.
+
+---
+
 ## Table of Contents
 
 1. [Overview](#overview)
