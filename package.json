@@ -18,6 +18,8 @@
   "html editor",
   "visual editor",
   "rich text",
+  "blazor",
+  "avalonia",
   "preview"
 ],
   "activationEvents": [],
