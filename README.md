@@ -76,7 +76,7 @@ The extension is read-write: it parses the existing markup into a visual represe
 |---------|---------|
 | **Drag-and-drop toolbox** | 50+ XAML controls, 18 Blazor components, 60+ HTML elements |
 | **Visual canvas** | Absolute-positioned drag surface with pixel-accurate placement |
-| **Resize handles** | 8-point handles (4 corners + 4 edges) on every selected control |
+| **Resize handles** | 8-point handles (4 corners + 4 edges) on every selected control. Panes in the editor can now be resized by dragging their borders. |
 | **Properties panel** | Dynamic panel showing all editable attributes for the selected control |
 | **Undo / Redo** | Full per-session undo stack (Ctrl+Z / Ctrl+Y) |
 | **Keyboard control** | Delete, Duplicate, Arrow-key nudging (1 px / 10 px), Escape |
@@ -220,7 +220,7 @@ You can also run the corresponding command from the Command Palette (`Ctrl+Shift
 
 ### Designer Layout
 
-Every designer shares the same three-pane layout:
+Every designer shares the same three-pane layout. Panes can now be resized by dragging their borders:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
