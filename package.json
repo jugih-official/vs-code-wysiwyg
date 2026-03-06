@@ -4,7 +4,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "displayName": "XAML/AXAML/Razor/HTML Visual Designer",
   "description": "WYSIWYG visual designer for .xaml, .axaml, .razor, .html and .htm files with drag-and-drop controls and resizing",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "publisher": "jugih-official",
  "repository": {  "type": "git",  "url": "https://github.com/jugih-official/vs-code-wysiwyg" },
  "engines": {
