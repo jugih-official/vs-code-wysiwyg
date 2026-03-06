@@ -13,7 +13,7 @@ Much obliged!
 # XAML / AXAML / Razor / HTML Visual Designer
 
 A VS Code extension that provides a full **WYSIWYG visual designer** for `.xaml`, `.axaml`, `.razor`, `.html`, and `.htm` files.  
-Design UIs by dragging controls onto a canvas — no hand-editing markup required. Changes sync back to the source file with a single click. <br>
+Design UIs by dragging controls onto a canvas — no hand-editing markup required. Changes sync back to the source file automatically. <br>
 Now on Vs Code marketplace:<br>
 https://marketplace.visualstudio.com/items?itemName=jugih-official.wysiwyg-designer
 
@@ -47,9 +47,12 @@ See the LICENSE file for full terms.
    - [Opening a Designer](#opening-a-designer)
    - [Designer Layout](#designer-layout)
    - [Working with Controls](#working-with-controls)
+   - [Zoom & Pan](#zoom--pan)
+   - [Bidirectional Cursor Sync](#bidirectional-cursor-sync)
    - [Syncing Changes to Source](#syncing-changes-to-source)
 7. [XAML / AXAML Designer](#xaml--axaml-designer)
    - [Available Controls](#xaml-available-controls)
+   - [Control Nesting](#control-nesting)
    - [Properties Panel — XAML](#properties-panel--xaml)
 8. [Razor Designer](#razor-designer)
    - [Available Elements](#razor-available-elements)
@@ -89,14 +92,18 @@ The extension is read-write: it parses the existing markup into a visual represe
 |---------|---------|
 | **Drag-and-drop toolbox** | 50+ XAML controls, 18 Blazor components, 60+ HTML elements |
 | **Visual canvas** | Absolute-positioned drag surface with pixel-accurate placement |
-| **Resize handles** | 8-point handles (4 corners + 4 edges) on every selected control. Panes in the editor can now be resized by dragging their borders. |
+| **Resize handles** | 8-point handles (4 corners + 4 edges) on every selected control |
+| **Resizable panes** | Drag the splitter borders between the Toolbox, Canvas, and Properties panels to resize them |
 | **Properties panel** | Dynamic panel showing all editable attributes for the selected control |
-| **Undo / Redo** | Full per-session undo stack (Ctrl+Z / Ctrl+Y) |
-| **Keyboard control** | Delete, Duplicate, Arrow-key nudging (1 px / 10 px), Escape |
+| **Undo / Redo** | Full per-session undo stack (up to 50 entries) — Ctrl+Z / Ctrl+Y |
+| **Keyboard control** | Delete, Duplicate, Arrow-key nudging (1 px / 10 px with Shift), Escape |
 | **Z-order management** | Bring to Front / Send to Back per control |
 | **Context menu** | Right-click any control for common operations |
-| **Sync to source** | One-click write-back of the visual layout as formatted markup |
+| **Auto-sync** | Visual changes are written back to the source file automatically after a 300 ms idle period; a pulsing badge in the toolbar confirms each sync |
 | **Bi-directional sync** | External file edits update the canvas automatically |
+| **Bidirectional cursor sync** | Clicking a control in the designer highlights the matching element in the text editor, and moving the text-editor cursor highlights the matching control on the canvas |
+| **Zoom & Pan** | Ctrl+Scroll to zoom the canvas (10%–500%); middle-mouse-button drag to pan; click the zoom badge to reset to 100% |
+| **Control nesting (XAML)** | Container controls (StackPanel, Grid, Canvas, Border, etc.) accept child controls via drag-and-drop, producing proper parent–child XAML markup |
 | **Three designer modes** | Separate, purpose-built designers for XAML, Razor, and HTML |
 | **HTML Live Preview** | Preview HTML files in a side panel inside VS Code with auto-refresh |
 | **XAML / Razor Preview** | Preview XAML/AXAML and Razor files with approximate HTML rendering in a side panel |
@@ -233,12 +240,12 @@ You can also run the corresponding command from the Command Palette (`Ctrl+Shift
 
 ### Designer Layout
 
-Every designer shares the same three-pane layout. Panes can now be resized by dragging their borders:
+Every designer shares the same three-pane layout. Drag the splitter borders between panes to resize them:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  Toolbar  [↶ Undo] [↷ Redo] [🗑 Delete] [⬆ Front]      │
-│           [⬇ Back] [💾 Sync to <Format>]                │
+│           [⬇ Back]                    [● Auto-Sync]     │
 ├──────────────┬──────────────────────────┬───────────────┤
 │              │                          │               │
 │   Toolbox    │      Design Canvas       │  Properties   │
@@ -265,10 +272,34 @@ Every designer shares the same three-pane layout. Panes can now be resized by dr
 | **Redo last action** | Press **Ctrl+Y**, or click ↷ in the toolbar |
 | **Deselect** | Press **Escape** or click on an empty area of the canvas |
 | **Change z-order** | Use **Bring to Front** / **Send to Back** in the toolbar or context menu |
+| **Zoom canvas** | Hold **Ctrl** and scroll the mouse wheel — zoom range is 10% to 500% |
+| **Reset zoom** | Click the zoom-percentage badge in the toolbar to reset to 100% |
+| **Pan canvas** | Hold the **middle mouse button** and drag |
+
+### Zoom & Pan
+
+The canvas supports smooth zoom and pan so you can work comfortably with large or complex layouts.
+
+| Interaction | Action |
+|-------------|--------|
+| **Ctrl + Scroll wheel** | Zoom in / out — range 10% to 500% |
+| **Click zoom badge** | Reset zoom to 100% |
+| **Middle-mouse-button drag** | Pan the canvas in any direction |
+
+All coordinate operations (drop, drag, resize) are automatically adjusted for the current zoom level, so controls are always placed at the correct pixel position regardless of how far you are zoomed in or out.
+
+### Bidirectional Cursor Sync
+
+The designers keep the visual canvas and the text editor in sync at all times:
+
+- **Visual → Text**: Click a control on the canvas; the text editor jumps to the corresponding markup element and selects it.
+- **Text → Visual**: Move the cursor (or click) in the text editor; the matching control on the canvas is highlighted with a coloured overlay.
+
+This makes it easy to navigate between the visual representation and the raw markup without losing context.
 
 ### Syncing Changes to Source
 
-Click the **"Sync to &lt;Format&gt;"** button in the toolbar (or use the toolbar's 💾 button) to write the current visual layout back to the source file as formatted markup.
+Changes made on the canvas are written back to the source file **automatically**. After any visual operation (drag, resize, property edit, add, delete, undo/redo), a 300 ms debounce timer starts. When it expires, the designer serialises the current layout back to the markup file. A small **Auto-Sync** badge in the toolbar pulses briefly to confirm each sync.
 
 The extension also listens for external file changes: if the `.xaml`, `.razor`, or `.html` file is edited in another editor tab, the canvas will refresh automatically.
 
@@ -358,6 +389,19 @@ All control coordinates are expressed as `Canvas.Left` / `Canvas.Top` absolute p
 | Polygon | Closed polygon |
 | Polyline | Open polyline |
 | Arc | Arc segment |
+
+### Control Nesting
+
+Container controls (e.g. `StackPanel`, `Grid`, `Canvas`, `Border`, `DockPanel`, `WrapPanel`) can hold child controls. When you drag a new control from the toolbox and drop it onto a container, the container highlights to show it will become the parent. The generated XAML reflects this as properly indented, parent–child markup:
+
+```xml
+<StackPanel Canvas.Left="40" Canvas.Top="60" Width="200" Height="150">
+    <Button Content="Click Me" Width="120" Height="32"/>
+    <TextBlock Text="Hello" Width="120" Height="24"/>
+</StackPanel>
+```
+
+Nested controls are rendered above their parent in z-order and their positions are relative to the parent container's origin.
 
 ### Properties Panel — XAML
 
@@ -540,6 +584,8 @@ These shortcuts are active whenever the design canvas has focus.
 | `Escape` | Deselect the current control |
 | `↑` `↓` `←` `→` | Move the selected control by **1 px** |
 | `Shift+↑` `Shift+↓` `Shift+←` `Shift+→` | Move the selected control by **10 px** |
+| `Ctrl+Scroll Up` | Zoom in |
+| `Ctrl+Scroll Down` | Zoom out |
 
 ---
 
@@ -547,14 +593,15 @@ These shortcuts are active whenever the design canvas has focus.
 
 The toolbar appears at the top of every designer.
 
-| Button | Shortcut | Action |
-|--------|----------|--------|
+| Button / Indicator | Shortcut | Action |
+|--------------------|----------|--------|
 | ↶ **Undo** | Ctrl+Z | Undo the last action |
 | ↷ **Redo** | Ctrl+Y | Redo the last undone action |
 | 🗑 **Delete** | Delete | Delete the selected control |
 | ⬆ **Bring to Front** | — | Move the selected control to the top of the z-order |
 | ⬇ **Send to Back** | — | Move the selected control to the bottom of the z-order |
-| 💾 **Sync to &lt;Format&gt;** | — | Write the visual layout back to the source file |
+| **● Auto-Sync badge** | — | Pulses green whenever the designer writes the current layout back to the source file (triggered automatically after a 300 ms idle period) |
+| **xx% zoom badge** | — | Displays the current zoom level; click to reset to 100% |
 
 ---
 
