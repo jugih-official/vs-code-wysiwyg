@@ -11,7 +11,7 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other"
+    "Formatters"
   ],
 "keywords": [
   "wysiwyg",
@@ -20,7 +20,6 @@
   "rich text",
   "preview"
 ],
-  
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
