@@ -1298,7 +1298,7 @@ body {
 
             (function(c) {
                 el.addEventListener('mousedown', function(e) {
-                    if (e.button === 2) return;
+                    if (e.button !== 0) return;
                     e.stopPropagation();
                     selectControl(c.id);
                     startDragControl(e, c);
@@ -1333,6 +1333,7 @@ body {
 
                     (function(handle, control) {
                         hel.addEventListener('mousedown', function(e) {
+                            if (e.button !== 0) return;
                             e.stopPropagation();
                             startResize(e, control, handle);
                         });

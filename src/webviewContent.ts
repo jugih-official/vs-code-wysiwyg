@@ -1158,15 +1158,24 @@ body {
         return xaml;
     }
 
-    function generateControlXaml(ctrl, indent) {
+    function generateControlXaml(ctrl, indent, parentType) {
         var NL = '\\n';
         var hasChildren = ctrl.children && ctrl.children.length > 0;
         var isSelfClosing = !ctrl.content && containerTypes.indexOf(ctrl.type) < 0 && !hasChildren;
         var line = indent + '<' + ctrl.type;
 
         if (ctrl.name) line += ' x:Name="' + escXml(ctrl.name) + '"';
-        line += ' Canvas.Left="' + Math.round(ctrl.x) + '"';
-        line += ' Canvas.Top="' + Math.round(ctrl.y) + '"';
+
+        var useCanvasPos = !parentType || parentType === 'Canvas';
+        if (useCanvasPos) {
+            line += ' Canvas.Left="' + Math.round(ctrl.x) + '"';
+            line += ' Canvas.Top="' + Math.round(ctrl.y) + '"';
+        } else {
+            line += ' Margin="' + Math.round(ctrl.x) + ',' + Math.round(ctrl.y) + ',0,0"';
+            line += ' HorizontalAlignment="Left"';
+            line += ' VerticalAlignment="Top"';
+        }
+
         line += ' Width="' + Math.round(ctrl.w) + '"';
         line += ' Height="' + Math.round(ctrl.h) + '"';
 
@@ -1179,7 +1188,9 @@ body {
         var props = ctrl.properties || {};
         var propKeys = Object.keys(props);
         for (var pi = 0; pi < propKeys.length; pi++) {
-            line += ' ' + propKeys[pi] + '="' + escXml(props[propKeys[pi]]) + '"';
+            var pk = propKeys[pi];
+            if (!useCanvasPos && (pk === 'Margin' || pk === 'HorizontalAlignment' || pk === 'VerticalAlignment')) continue;
+            line += ' ' + pk + '="' + escXml(props[pk]) + '"';
         }
 
         if (isSelfClosing) {
@@ -1188,7 +1199,7 @@ body {
             line += '>' + NL;
             if (hasChildren) {
                 for (var ci = 0; ci < ctrl.children.length; ci++) {
-                    line += generateControlXaml(ctrl.children[ci], indent + '    ');
+                    line += generateControlXaml(ctrl.children[ci], indent + '    ', ctrl.type);
                 }
             }
             line += indent + '</' + ctrl.type + '>' + NL;
@@ -1229,7 +1240,7 @@ body {
 
             (function(c) {
                 el.addEventListener('mousedown', function(e) {
-                    if (e.button === 2) return;
+                    if (e.button !== 0) return;
                     e.stopPropagation();
                     selectControl(c.id);
                     startDragControl(e, c);
@@ -1264,6 +1275,7 @@ body {
 
                     (function(handle, control) {
                         hel.addEventListener('mousedown', function(e) {
+                            if (e.button !== 0) return;
                             e.stopPropagation();
                             startResize(e, control, handle);
                         });
