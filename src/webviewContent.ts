@@ -853,6 +853,17 @@ body {
         return result;
     }
 
+    function getOccurrenceIndex(ctrl) {
+        var allCtrls = getAllControls();
+        var idx = 0;
+        for (var i = 0; i < allCtrls.length; i++) {
+            var c = allCtrls[i];
+            if (c.id === ctrl.id) return idx;
+            if (c.type === ctrl.type && c.name === ctrl.name) idx++;
+        }
+        return 0;
+    }
+
     function getAbsolutePosition(ctrl) {
         var absX = ctrl.x;
         var absY = ctrl.y;
@@ -1401,7 +1412,7 @@ body {
         if (id !== null) {
             var ctrl = findControlById(id);
             if (ctrl) {
-                vscode.postMessage({ type: 'selectElement', elementType: ctrl.type, elementName: ctrl.name || '' });
+                vscode.postMessage({ type: 'selectElement', elementType: ctrl.type, elementName: ctrl.name || '', occurrenceIndex: getOccurrenceIndex(ctrl) });
             }
         }
     }
@@ -2153,15 +2164,18 @@ body {
             case 'highlightElement': {
                 var elemType = message.elementType || '';
                 var elemName = message.elementName || '';
+                var occIdx = typeof message.occurrenceIndex === 'number' ? message.occurrenceIndex : -1;
                 var found = null;
                 var allCtrls = getAllControls();
+                var matchCount = 0;
                 for (var hi = 0; hi < allCtrls.length; hi++) {
                     var c = allCtrls[hi];
-                    if (c.type === elemType) {
-                        if (!elemName || c.name === elemName) {
+                    if (c.type === elemType && c.name === elemName) {
+                        if (occIdx < 0 || matchCount === occIdx) {
                             found = c;
                             break;
                         }
+                        matchCount++;
                     }
                 }
                 if (found && found.id !== selectedId) {
