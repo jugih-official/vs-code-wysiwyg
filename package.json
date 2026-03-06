@@ -1,6 +1,7 @@
 {
   "name": "wysiwyg-designer",
   "icon": "images/icon.png",
+  "license": "SEE LICENSE IN LICENSE",
   "displayName": "XAML/AXAML/Razor/HTML Visual Designer",
   "description": "WYSIWYG visual designer for .xaml, .axaml, .razor, .html and .htm files with drag-and-drop controls and resizing",
   "version": "1.0.8",
