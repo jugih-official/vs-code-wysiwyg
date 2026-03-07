@@ -663,7 +663,7 @@ body {
     let resizeHandle = '';
     let dragStartX = 0, dragStartY = 0;
     let dragOrigX = 0, dragOrigY = 0, dragOrigW = 0, dragOrigH = 0;
-    var dragNestTarget = null;
+    let dragNestTarget = null;
     let documentLoaded = false;
     let autoSyncTimer = null;
     var canvasWidth = 800;
