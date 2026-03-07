@@ -391,6 +391,20 @@ body {
     outline: 2px dashed var(--control-selected);
     outline-offset: -2px;
 }
+/* Nest indicator tooltip shown during drag */
+.nest-indicator {
+    position: absolute;
+    background: rgba(0, 122, 204, 0.9);
+    color: #fff;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    pointer-events: none;
+    z-index: 10002;
+    display: none;
+    white-space: nowrap;
+    transform: translateX(-50%);
+}
 </style>
 </head>
 <body>
@@ -606,6 +620,7 @@ body {
                 <span class="canvas-label" id="canvasLabel">Window</span>
                 <div class="canvas-container" id="designCanvas">
                     <div class="drop-indicator" id="dropIndicator"></div>
+                    <div class="nest-indicator" id="nestIndicator"></div>
                 </div>
             </div>
         </div>
@@ -648,6 +663,7 @@ body {
     let resizeHandle = '';
     let dragStartX = 0, dragStartY = 0;
     let dragOrigX = 0, dragOrigY = 0, dragOrigW = 0, dragOrigH = 0;
+    let dragNestTarget = null;
     let documentLoaded = false;
     let autoSyncTimer = null;
     var canvasWidth = 800;
@@ -697,6 +713,7 @@ body {
 
     const canvas = document.getElementById('designCanvas');
     const dropIndicator = document.getElementById('dropIndicator');
+    const nestIndicator = document.getElementById('nestIndicator');
     const propertiesPanel = document.getElementById('propertiesPanel');
     const contextMenu = document.getElementById('contextMenu');
     const canvasLabel = document.getElementById('canvasLabel');
@@ -896,6 +913,16 @@ body {
             }
         }
         return best;
+    }
+
+    function isDescendantOf(id, ancestorId) {
+        var ancestor = findControlById(ancestorId);
+        if (!ancestor || !ancestor.children) return false;
+        for (var i = 0; i < ancestor.children.length; i++) {
+            if (ancestor.children[i].id === id) return true;
+            if (isDescendantOf(id, ancestor.children[i].id)) return true;
+        }
+        return false;
     }
 
     function reassignIds(ctrl) {
@@ -1217,6 +1244,12 @@ body {
         canvas.querySelectorAll('.resize-handle').forEach(function(el) { el.remove(); });
 
         renderControlList(controls, 0, 0, 0);
+
+        // Reapply drop-target highlight after re-render if dragging
+        if (dragNestTarget) {
+            var targetEl = canvas.querySelector('[data-id="' + dragNestTarget.id + '"]');
+            if (targetEl) targetEl.classList.add('drop-target');
+        }
     }
 
     function renderControlList(list, offsetX, offsetY, depth) {
@@ -1554,6 +1587,37 @@ body {
             var dy = (e.clientY - dragStartY) / zoomLevel;
             ctrl.x = Math.max(0, dragOrigX + dx);
             ctrl.y = Math.max(0, dragOrigY + dy);
+
+            // Detect container under dragged control for potential nesting
+            var absPos = getAbsolutePosition(ctrl);
+            var centerX = absPos.x + ctrl.w / 2;
+            var centerY = absPos.y + ctrl.h / 2;
+            var nestTarget = findContainerAtPoint(centerX, centerY, ctrl.id);
+            // Prevent nesting into own descendants
+            if (nestTarget && isDescendantOf(nestTarget.id, ctrl.id)) {
+                nestTarget = null;
+            }
+            // Skip if already parented to this container
+            if (nestTarget && ctrl.parentId === nestTarget.id) {
+                nestTarget = null;
+            }
+            dragNestTarget = nestTarget;
+
+            // Update nest indicator tooltip
+            if (dragNestTarget) {
+                nestIndicator.textContent = 'Hold Alt to nest into ' + dragNestTarget.type;
+                nestIndicator.style.display = 'block';
+                nestIndicator.style.left = (centerX) + 'px';
+                nestIndicator.style.top = (absPos.y - 20) + 'px';
+            } else if (ctrl.parentId) {
+                nestIndicator.textContent = 'Hold Alt to un-nest from parent';
+                nestIndicator.style.display = 'block';
+                nestIndicator.style.left = (centerX) + 'px';
+                nestIndicator.style.top = (absPos.y - 20) + 'px';
+            } else {
+                nestIndicator.style.display = 'none';
+            }
+
             scheduleRender();
             updateProperties();
         }
@@ -1572,7 +1636,38 @@ body {
         }
     });
 
-    document.addEventListener('mouseup', function() {
+    document.addEventListener('mouseup', function(e) {
+        if (isDraggingControl && selectedId !== null && e.altKey) {
+            var ctrl = findControlById(selectedId);
+            if (ctrl) {
+                var absPos = getAbsolutePosition(ctrl);
+                if (dragNestTarget) {
+                    // Nest into the target container
+                    saveUndo();
+                    removeControlFromTree(ctrl.id);
+                    var parentPos = getAbsolutePosition(dragNestTarget);
+                    ctrl.x = Math.max(0, Math.round(absPos.x - parentPos.x));
+                    ctrl.y = Math.max(0, Math.round(absPos.y - parentPos.y));
+                    ctrl.parentId = dragNestTarget.id;
+                    ctrl.zIndex = dragNestTarget.children.length + 1;
+                    dragNestTarget.children.push(ctrl);
+                } else if (ctrl.parentId) {
+                    // Un-nest to canvas root
+                    saveUndo();
+                    removeControlFromTree(ctrl.id);
+                    ctrl.x = Math.max(0, Math.round(absPos.x));
+                    ctrl.y = Math.max(0, Math.round(absPos.y));
+                    ctrl.parentId = null;
+                    ctrl.zIndex = controls.length + 1;
+                    controls.push(ctrl);
+                }
+            }
+        }
+        // Clean up nest indicator and drop-target highlights
+        nestIndicator.style.display = 'none';
+        canvas.querySelectorAll('.drop-target').forEach(function(el) { el.classList.remove('drop-target'); });
+        dragNestTarget = null;
+
         if (isDraggingControl || isResizing) {
             scheduleAutoSync();
         }
