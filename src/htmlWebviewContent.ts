@@ -2223,7 +2223,7 @@ body {
         var message = event.data;
         switch (message.type) {
             case 'highlightElement': {
-                if (isDraggingControl || isResizing) break;
+                if (isDraggingControl || isResizing || isDraggingNew || autoSyncTimer) break;
                 var elemType = message.elementType || '';
                 var elemName = message.elementName || '';
                 var occIdx = typeof message.occurrenceIndex === 'number' ? message.occurrenceIndex : -1;
@@ -2248,7 +2248,7 @@ body {
                 break;
             }
             case 'documentUpdate': {
-                if (isDraggingControl || isResizing) break;
+                if (isDraggingControl || isResizing || isDraggingNew || autoSyncTimer) break;
                 var parsed = parseHtmlContent(message.content);
                 if (parsed) {
                     var prevSelectedId = selectedId;
