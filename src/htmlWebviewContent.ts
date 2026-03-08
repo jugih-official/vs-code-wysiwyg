@@ -1211,98 +1211,107 @@ body {
     }
 
     function parseBodyElements(htmlPortion) {
-        var allTypeNames = Object.keys(controlDefaults);
+        var parser = new DOMParser();
+        var doc = parser.parseFromString('<html><body>' + htmlPortion + '</body></html>', 'text/html');
+        var body = doc.body;
+        if (!body) return [];
+
         var parsed = [];
-
-        for (var ti = 0; ti < allTypeNames.length; ti++) {
-            var typeName = allTypeNames[ti];
-            var selfClose = new RegExp('<' + typeName + '(\\\\s[^>]*)?\\\\/>', 'g');
-            var openClose = new RegExp('<' + typeName + '(\\\\s[^>]*)?>(([\\\\s\\\\S]*?)?)<\\\\/' + typeName + '\\\\s*>', 'g');
-            // Also match void elements without self-closing slash (e.g., <br> <hr> <img ...>)
-            var voidTag = null;
-            if (selfClosingTypes.indexOf(typeName) >= 0) {
-                voidTag = new RegExp('<' + typeName + '(\\\\s[^>]*)?>(?!\\\\s*<\\\\/' + typeName + ')', 'g');
-            }
-
-            var m;
-            while ((m = selfClose.exec(htmlPortion)) !== null) {
-                var ctrl = parseElementAttrs(typeName, m[1] || '', '');
-                if (ctrl) parsed.push(ctrl);
-            }
-            while ((m = openClose.exec(htmlPortion)) !== null) {
-                var innerText = (m[2] || '').trim();
-                var ctrl2 = parseElementAttrs(typeName, m[1] || '', innerText);
-                if (ctrl2) parsed.push(ctrl2);
-            }
-            if (voidTag) {
-                while ((m = voidTag.exec(htmlPortion)) !== null) {
-                    // Skip if already matched as self-closing
-                    var fullMatch = m[0];
-                    if (fullMatch.charAt(fullMatch.length - 2) === '/') continue;
-                    var ctrl3 = parseElementAttrs(typeName, m[1] || '', '');
-                    if (ctrl3) parsed.push(ctrl3);
-                }
-            }
-        }
-
+        walkHtmlChildren(body, null, parsed);
         return parsed;
     }
 
-    function parseElementAttrs(typeName, attrString, innerText) {
-        var def = controlDefaults[typeName];
-        if (!def) return null;
+    function isDesignerWrapper(el) {
+        if (el.tagName.toLowerCase() !== 'div') return false;
+        if (el.hasAttribute('data-designer-wrapper')) return true;
+        var style = el.getAttribute('style') || '';
+        // Heuristic for legacy wrapper divs: position:relative + width + height, no id/class
+        if (/position\\s*:\\s*relative/.test(style) && /width\\s*:/.test(style) && /height\\s*:/.test(style)) {
+            if (!el.getAttribute('id') && !el.getAttribute('class')) return true;
+        }
+        return false;
+    }
 
-        var attrs = {};
-        // Parse double-quoted attributes
-        var attrRegex = /([\\w:.\\-]+)\\s*=\\s*"([^"]*)"/g;
-        var am;
-        while ((am = attrRegex.exec(attrString)) !== null) {
-            attrs[am[1]] = am[2];
-        }
-        // Parse single-quoted attributes
-        var attrRegex2 = /([\\w:.\\-]+)\\s*=\\s*'([^']*)'/g;
-        while ((am = attrRegex2.exec(attrString)) !== null) {
-            attrs[am[1]] = am[2];
-        }
-        // Parse boolean attributes (no value)
-        var boolRegex = /\\s([\\w:.\\-]+)(?=\\s|$|\\/>|>)/g;
-        var bm;
-        var attrStr = attrString || '';
-        while ((bm = boolRegex.exec(attrStr)) !== null) {
-            var boolName = bm[1];
-            if (!(boolName in attrs)) {
-                attrs[boolName] = 'true';
+    function walkHtmlChildren(parent, parentCtrl, rootList) {
+        for (var j = 0; j < parent.children.length; j++) {
+            var el = parent.children[j];
+            var tagName = el.tagName.toLowerCase();
+
+            // Skip designer wrapper divs — walk into their children instead
+            if (isDesignerWrapper(el)) {
+                walkHtmlChildren(el, parentCtrl, rootList);
+                continue;
+            }
+
+            // Skip unknown element types — walk into their children
+            if (!controlDefaults[tagName]) {
+                walkHtmlChildren(el, parentCtrl, rootList);
+                continue;
+            }
+
+            var ctrl = parseElementFromDom(el, tagName, parentCtrl);
+
+            if (parentCtrl) {
+                parentCtrl.children.push(ctrl);
+            } else {
+                rootList.push(ctrl);
+            }
+
+            // Recurse into container types with child elements
+            if (containerTypes.indexOf(tagName) >= 0 && el.children.length > 0) {
+                walkHtmlChildren(el, ctrl, rootList);
             }
         }
+    }
 
-        // Extract positioning from style attribute
-        var style = attrs['style'] || '';
+    var booleanHtmlAttrs = ['required', 'disabled', 'readonly', 'multiple', 'novalidate',
+        'controls', 'autoplay', 'loop', 'muted', 'open', 'reversed', 'hidden'];
+
+    function parseElementFromDom(el, tagName, parentCtrl) {
+        var def = controlDefaults[tagName];
+        var style = el.getAttribute('style') || '';
         var xVal = extractStyleNum(style, 'left');
         var yVal = extractStyleNum(style, 'top');
         var wVal = extractStyleNum(style, 'width');
         var hVal = extractStyleNum(style, 'height');
 
+        // Extract direct text content (not from child elements)
+        var innerText = '';
+        if (contentTypes.indexOf(tagName) >= 0) {
+            for (var i = 0; i < el.childNodes.length; i++) {
+                if (el.childNodes[i].nodeType === 3) { // TEXT_NODE
+                    innerText += el.childNodes[i].textContent;
+                }
+            }
+            innerText = innerText.trim();
+        }
+
         var ctrl = {
             id: nextId++,
-            type: typeName,
+            type: tagName,
             x: xVal !== null ? xVal : 10,
             y: yVal !== null ? yVal : 10 + (nextId - 2) * 5,
             w: wVal !== null ? wVal : def.w,
             h: hVal !== null ? hVal : def.h,
-            name: attrs['id'] || '',
+            name: el.getAttribute('id') || '',
             content: innerText || def.content,
             properties: {},
             zIndex: nextId,
             children: [],
-            parentId: null
+            parentId: parentCtrl ? parentCtrl.id : null
         };
 
-        // Gather additional attributes, skipping ones we handle separately
-        var skipAttrs = ['style', 'id'];
-        var propKeys = Object.keys(attrs);
-        for (var pi = 0; pi < propKeys.length; pi++) {
-            if (skipAttrs.indexOf(propKeys[pi]) >= 0) continue;
-            ctrl.properties[propKeys[pi]] = attrs[propKeys[pi]];
+        // Gather additional attributes
+        var skipAttrs = ['style', 'id', 'data-designer-wrapper'];
+        for (var ai = 0; ai < el.attributes.length; ai++) {
+            var attr = el.attributes[ai];
+            if (skipAttrs.indexOf(attr.name) >= 0) continue;
+            // Convert empty boolean attributes to 'true'
+            if (attr.value === '' && booleanHtmlAttrs.indexOf(attr.name) >= 0) {
+                ctrl.properties[attr.name] = 'true';
+            } else {
+                ctrl.properties[attr.name] = attr.value;
+            }
         }
 
         return ctrl;
@@ -1322,7 +1331,7 @@ body {
 
         if (isFragment) {
             // Fragment mode: just output positioned elements
-            html += '<div style="position:relative;width:' + (canvas.offsetWidth || 800) + 'px;height:' + (canvas.offsetHeight || 500) + 'px;">' + NL;
+            html += '<div data-designer-wrapper="true" style="position:relative;width:' + (canvas.offsetWidth || 800) + 'px;height:' + (canvas.offsetHeight || 500) + 'px;">' + NL;
             html += generateControlElements(NL);
             html += '</div>' + NL;
             return html;
@@ -1343,7 +1352,7 @@ body {
         // Container div for absolute positioning
         var cw = (canvas.offsetWidth || 800) + 'px';
         var ch = (canvas.offsetHeight || 500) + 'px';
-        html += '<div style="position:relative;width:' + cw + ';height:' + ch + ';">' + NL;
+        html += '<div data-designer-wrapper="true" style="position:relative;width:' + cw + ';height:' + ch + ';">' + NL;
 
         html += generateControlElements(NL);
 
