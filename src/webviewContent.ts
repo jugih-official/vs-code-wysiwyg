@@ -843,7 +843,7 @@ body {
         'DataGrid', 'ScrollViewer', 'ListBox',
         'SplitView', 'Carousel', 'NavigationView', 'FlyoutPresenter', 'Popup',
         'HeaderedContentControl', 'ContentControl', 'ItemsControl',
-        'Panel', 'RelativePanel', 'ItemsRepeater'];
+        'Panel', 'RelativePanel', 'ItemsRepeater', 'VirtualizingStackPanel'];
 
     // =================== TREE HELPERS ===================
     function findControlById(id, list) {

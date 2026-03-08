@@ -358,6 +358,25 @@ body {
     display: none;
     z-index: 50;
 }
+/* Container drop highlight */
+.design-control.drop-target {
+    outline: 2px dashed var(--control-selected);
+    outline-offset: -2px;
+}
+/* Nest indicator tooltip shown during drag */
+.nest-indicator {
+    position: absolute;
+    background: rgba(0, 122, 204, 0.9);
+    color: #fff;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    pointer-events: none;
+    z-index: 10002;
+    display: none;
+    white-space: nowrap;
+    transform: translateX(-50%);
+}
 /* Panel splitter/resizer handles */
 .panel-splitter {
     width: 5px;
@@ -615,6 +634,7 @@ body {
                 <span class="canvas-label" id="canvasLabel">HTML Document</span>
                 <div class="canvas-container" id="designCanvas">
                     <div class="drop-indicator" id="dropIndicator"></div>
+                    <div class="nest-indicator" id="nestIndicator"></div>
                 </div>
             </div>
         </div>
@@ -657,6 +677,7 @@ body {
     var resizeHandle = '';
     var dragStartX = 0, dragStartY = 0;
     var dragOrigX = 0, dragOrigY = 0, dragOrigW = 0, dragOrigH = 0;
+    var dragNestTarget = null;
     var documentLoaded = false;
     var isSplitterDragging = false;
     var activeSplitter = null;
@@ -696,6 +717,7 @@ body {
 
     var canvas = document.getElementById('designCanvas');
     var dropIndicator = document.getElementById('dropIndicator');
+    var nestIndicator = document.getElementById('nestIndicator');
     var propertiesPanel = document.getElementById('propertiesPanel');
     var contextMenu = document.getElementById('contextMenu');
     var canvasLabel = document.getElementById('canvasLabel');
@@ -829,11 +851,29 @@ body {
     // HTML void / self-closing elements
     var selfClosingTypes = ['hr', 'br', 'img', 'input', 'source', 'col', 'meter', 'progress'];
 
-    // Container types (rendered with open + close tag, no text content)
-    var containerTypes = ['div', 'form', 'fieldset', 'nav', 'header', 'footer', 'section', 'article',
-        'aside', 'main', 'details', 'dialog', 'figure', 'table', 'thead', 'tbody', 'tfoot', 'tr',
-        'ul', 'ol', 'dl', 'picture', 'colgroup', 'template', 'slot', 'blockquote', 'pre', 'svg',
-        'canvas', 'textarea', 'select', 'iframe', 'video', 'audio', 'datalist'];
+    // Container types (rendered with open + close tag, can accept children)
+    var containerTypes = [
+        // HTML structural
+        'html', 'head', 'body', 'div', 'span', 'p', 'section', 'article',
+        'nav', 'aside', 'main', 'header', 'footer',
+        'figure', 'figcaption', 'blockquote', 'pre', 'code',
+        // Lists
+        'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+        // Tables
+        'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'caption',
+        // Forms
+        'form', 'fieldset', 'legend', 'label', 'select', 'optgroup', 'option', 'textarea', 'button',
+        // Interactive
+        'details', 'summary', 'dialog',
+        // Inline / semantic
+        'a', 'strong', 'em', 'small', 'mark', 'time', 'sub', 'sup',
+        // Media
+        'video', 'audio', 'picture', 'canvas', 'svg', 'math',
+        // Template / slots
+        'template', 'slot',
+        // Other containers
+        'colgroup', 'datalist', 'iframe'
+    ];
 
     // Type-specific extra properties shown in the properties panel
     var typeExtraProperties = {
@@ -990,6 +1030,98 @@ body {
         { name: 'hidden', type: 'select', options: ['', 'true'] },
         { name: 'draggable', type: 'select', options: ['', 'true', 'false'] }
     ];
+
+    // =================== TREE HELPERS ===================
+    function findControlById(id, list) {
+        if (!list) list = controls;
+        for (var i = 0; i < list.length; i++) {
+            if (list[i].id === id) return list[i];
+            if (list[i].children && list[i].children.length > 0) {
+                var found = findControlById(id, list[i].children);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+
+    function getAllControls(list, result) {
+        if (!list) list = controls;
+        if (!result) result = [];
+        for (var i = 0; i < list.length; i++) {
+            result.push(list[i]);
+            if (list[i].children && list[i].children.length > 0) {
+                getAllControls(list[i].children, result);
+            }
+        }
+        return result;
+    }
+
+    function getAbsolutePosition(ctrl) {
+        var absX = ctrl.x;
+        var absY = ctrl.y;
+        if (ctrl.parentId) {
+            var parent = findControlById(ctrl.parentId);
+            if (parent) {
+                var pp = getAbsolutePosition(parent);
+                absX += pp.x;
+                absY += pp.y;
+            }
+        }
+        return { x: absX, y: absY };
+    }
+
+    function findContainerAtPoint(px, py, excludeId) {
+        var all = getAllControls();
+        var best = null;
+        var bestArea = Infinity;
+        for (var i = 0; i < all.length; i++) {
+            var c = all[i];
+            if (excludeId && c.id === excludeId) continue;
+            if (containerTypes.indexOf(c.type) < 0) continue;
+            var pos = getAbsolutePosition(c);
+            if (px >= pos.x && px <= pos.x + c.w && py >= pos.y && py <= pos.y + c.h) {
+                var area = c.w * c.h;
+                if (area < bestArea) {
+                    bestArea = area;
+                    best = c;
+                }
+            }
+        }
+        return best;
+    }
+
+    function isDescendantOf(id, ancestorId) {
+        var ancestor = findControlById(ancestorId);
+        if (!ancestor || !ancestor.children) return false;
+        for (var i = 0; i < ancestor.children.length; i++) {
+            if (ancestor.children[i].id === id) return true;
+            if (isDescendantOf(id, ancestor.children[i].id)) return true;
+        }
+        return false;
+    }
+
+    function removeControlFromTree(id) {
+        for (var i = 0; i < controls.length; i++) {
+            if (controls[i].id === id) {
+                controls.splice(i, 1);
+                return true;
+            }
+            if (removeFromChildren(controls[i], id)) return true;
+        }
+        return false;
+    }
+
+    function removeFromChildren(parent, id) {
+        if (!parent.children) return false;
+        for (var i = 0; i < parent.children.length; i++) {
+            if (parent.children[i].id === id) {
+                parent.children.splice(i, 1);
+                return true;
+            }
+            if (removeFromChildren(parent.children[i], id)) return true;
+        }
+        return false;
+    }
 
     // =================== HTML PARSING ===================
     function parseHtmlContent(text) {
@@ -1160,7 +1292,9 @@ body {
             name: attrs['id'] || '',
             content: innerText || def.content,
             properties: {},
-            zIndex: nextId
+            zIndex: nextId,
+            children: [],
+            parentId: null
         };
 
         // Gather additional attributes, skipping ones we handle separately
@@ -1229,48 +1363,58 @@ body {
     function generateControlElements(NL) {
         var output = '';
         for (var i = 0; i < controls.length; i++) {
-            var ctrl = controls[i];
-            var isSelfClosing = selfClosingTypes.indexOf(ctrl.type) >= 0;
-            var isContainer = containerTypes.indexOf(ctrl.type) >= 0;
-            var hasContent = ctrl.content && contentTypes.indexOf(ctrl.type) >= 0;
-
-            var line = '    <' + ctrl.type;
-
-            if (ctrl.name) line += ' id="' + escHtml(ctrl.name) + '"';
-
-            // Style attribute for positioning
-            line += ' style="position:absolute;left:' + Math.round(ctrl.x) + 'px;top:' + Math.round(ctrl.y) + 'px;width:' + Math.round(ctrl.w) + 'px;height:' + Math.round(ctrl.h) + 'px;"';
-
-            // Extra properties
-            var props = ctrl.properties || {};
-            var pk = Object.keys(props);
-            for (var pi = 0; pi < pk.length; pi++) {
-                var propVal = props[pk[pi]];
-                // Boolean attributes
-                if (propVal === 'true' && ['required', 'disabled', 'readonly', 'multiple', 'novalidate',
-                    'controls', 'autoplay', 'loop', 'muted', 'open', 'reversed', 'hidden'].indexOf(pk[pi]) >= 0) {
-                    line += ' ' + pk[pi];
-                } else {
-                    line += ' ' + pk[pi] + '="' + escHtml(propVal) + '"';
-                }
-            }
-
-            if (isSelfClosing) {
-                line += ' />' + NL;
-            } else if (hasContent) {
-                line += '>' + escHtml(ctrl.content) + '</' + ctrl.type + '>' + NL;
-            } else if (isContainer) {
-                line += '></' + ctrl.type + '>' + NL;
-            } else {
-                if (ctrl.content) {
-                    line += '>' + escHtml(ctrl.content) + '</' + ctrl.type + '>' + NL;
-                } else {
-                    line += '></' + ctrl.type + '>' + NL;
-                }
-            }
-            output += line;
+            output += generateSingleElement(controls[i], '    ', NL);
         }
         return output;
+    }
+
+    function generateSingleElement(ctrl, indent, NL) {
+        var isSelfClosing = selfClosingTypes.indexOf(ctrl.type) >= 0;
+        var isContainer = containerTypes.indexOf(ctrl.type) >= 0;
+        var hasContent = ctrl.content && contentTypes.indexOf(ctrl.type) >= 0;
+        var hasChildren = ctrl.children && ctrl.children.length > 0;
+
+        var line = indent + '<' + ctrl.type;
+
+        if (ctrl.name) line += ' id="' + escHtml(ctrl.name) + '"';
+
+        // Style attribute for positioning
+        line += ' style="position:absolute;left:' + Math.round(ctrl.x) + 'px;top:' + Math.round(ctrl.y) + 'px;width:' + Math.round(ctrl.w) + 'px;height:' + Math.round(ctrl.h) + 'px;"';
+
+        // Extra properties
+        var props = ctrl.properties || {};
+        var pk = Object.keys(props);
+        for (var pi = 0; pi < pk.length; pi++) {
+            var propVal = props[pk[pi]];
+            // Boolean attributes
+            if (propVal === 'true' && ['required', 'disabled', 'readonly', 'multiple', 'novalidate',
+                'controls', 'autoplay', 'loop', 'muted', 'open', 'reversed', 'hidden'].indexOf(pk[pi]) >= 0) {
+                line += ' ' + pk[pi];
+            } else {
+                line += ' ' + pk[pi] + '="' + escHtml(propVal) + '"';
+            }
+        }
+
+        if (isSelfClosing) {
+            line += ' />' + NL;
+        } else if (hasChildren) {
+            line += '>' + NL;
+            for (var ci = 0; ci < ctrl.children.length; ci++) {
+                line += generateSingleElement(ctrl.children[ci], indent + '    ', NL);
+            }
+            line += indent + '</' + ctrl.type + '>' + NL;
+        } else if (hasContent) {
+            line += '>' + escHtml(ctrl.content) + '</' + ctrl.type + '>' + NL;
+        } else if (isContainer) {
+            line += '></' + ctrl.type + '>' + NL;
+        } else {
+            if (ctrl.content) {
+                line += '>' + escHtml(ctrl.content) + '</' + ctrl.type + '>' + NL;
+            } else {
+                line += '></' + ctrl.type + '>' + NL;
+            }
+        }
+        return line;
     }
 
     function escHtml(s) {
@@ -1282,17 +1426,31 @@ body {
         canvas.querySelectorAll('.design-control').forEach(function(el) { el.remove(); });
         canvas.querySelectorAll('.resize-handle').forEach(function(el) { el.remove(); });
 
-        for (var i = 0; i < controls.length; i++) {
-            var ctrl = controls[i];
+        renderControlList(controls, 0, 0, 0);
+
+        // Reapply drop-target highlight after re-render if dragging
+        if (dragNestTarget) {
+            var targetEl = canvas.querySelector('[data-id="' + dragNestTarget.id + '"]');
+            if (targetEl) targetEl.classList.add('drop-target');
+        }
+    }
+
+    function renderControlList(list, offsetX, offsetY, depth) {
+        if (depth === undefined) depth = 0;
+        for (var i = 0; i < list.length; i++) {
+            var ctrl = list[i];
+            var absX = ctrl.x + offsetX;
+            var absY = ctrl.y + offsetY;
+
             var el = document.createElement('div');
             el.className = 'design-control' + (ctrl.id === selectedId ? ' selected' : '');
             el.dataset.id = ctrl.id;
             el.dataset.type = ctrl.type;
-            el.style.left = ctrl.x + 'px';
-            el.style.top = ctrl.y + 'px';
+            el.style.left = absX + 'px';
+            el.style.top = absY + 'px';
             el.style.width = ctrl.w + 'px';
             el.style.height = ctrl.h + 'px';
-            el.style.zIndex = ctrl.zIndex || 1;
+            el.style.zIndex = (depth * 100) + (ctrl.zIndex || 1);
 
             el.innerHTML = renderControlInner(ctrl);
 
@@ -1319,10 +1477,10 @@ body {
                     var h = handles[hi];
                     var hel = document.createElement('div');
                     hel.className = 'resize-handle ' + h;
-                    hel.style.zIndex = 101;
+                    hel.style.zIndex = 10001;
                     hel.style.position = 'absolute';
 
-                    var px = ctrl.x, py = ctrl.y, pw = ctrl.w, ph = ctrl.h;
+                    var px = absX, py = absY, pw = ctrl.w, ph = ctrl.h;
                     if (h.indexOf('n') >= 0) hel.style.top = (py - 4) + 'px';
                     if (h.indexOf('s') >= 0) hel.style.top = (py + ph - 4) + 'px';
                     if (h === 'e' || h === 'w') hel.style.top = (py + ph/2 - 4) + 'px';
@@ -1341,6 +1499,10 @@ body {
 
                     canvas.appendChild(hel);
                 }
+            }
+
+            if (ctrl.children && ctrl.children.length > 0) {
+                renderControlList(ctrl.children, absX, absY, depth + 1);
             }
         }
     }
@@ -1500,9 +1662,10 @@ body {
 
     // =================== SELECTION ===================
     function getOccurrenceIndex(ctrl) {
+        var allCtrls = getAllControls();
         var idx = 0;
-        for (var i = 0; i < controls.length; i++) {
-            var c = controls[i];
+        for (var i = 0; i < allCtrls.length; i++) {
+            var c = allCtrls[i];
             if (c.id === ctrl.id) return idx;
             if (c.type === ctrl.type && c.name === ctrl.name) idx++;
         }
@@ -1514,7 +1677,7 @@ body {
         render();
         updateProperties();
         if (id !== null) {
-            var ctrl = controls.find(function(c) { return c.id === id; });
+            var ctrl = findControlById(id);
             if (ctrl) {
                 vscode.postMessage({ type: 'selectElement', elementType: ctrl.type, elementName: ctrl.name || '', occurrenceIndex: getOccurrenceIndex(ctrl) });
             }
@@ -1546,6 +1709,7 @@ body {
         });
     });
 
+    var lastContainerCheck = 0;
     canvas.addEventListener('dragover', function(e) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
@@ -1558,37 +1722,72 @@ body {
         dropIndicator.style.top = (y - def.h/2) + 'px';
         dropIndicator.style.width = def.w + 'px';
         dropIndicator.style.height = def.h + 'px';
+        // Throttle container highlight (every 100ms)
+        var now = Date.now();
+        if (now - lastContainerCheck > 100) {
+            lastContainerCheck = now;
+            canvas.querySelectorAll('.drop-target').forEach(function(el) { el.classList.remove('drop-target'); });
+            var target = findContainerAtPoint(x, y);
+            if (target) {
+                var targetEl = canvas.querySelector('[data-id="' + target.id + '"]');
+                if (targetEl) targetEl.classList.add('drop-target');
+            }
+        }
     });
 
     canvas.addEventListener('dragleave', function() {
         dropIndicator.style.display = 'none';
+        canvas.querySelectorAll('.drop-target').forEach(function(el) { el.classList.remove('drop-target'); });
     });
 
     canvas.addEventListener('drop', function(e) {
         e.preventDefault();
         dropIndicator.style.display = 'none';
+        // Remove drop-target highlights
+        canvas.querySelectorAll('.drop-target').forEach(function(el) { el.classList.remove('drop-target'); });
         var type = e.dataTransfer.getData('text/plain');
         if (!type || !controlDefaults[type]) return;
 
         var rect = canvas.getBoundingClientRect();
         var def = controlDefaults[type];
-        var x = Math.max(0, (e.clientX - rect.left - canvas.clientLeft) / zoomLevel - def.w/2);
-        var y = Math.max(0, (e.clientY - rect.top - canvas.clientTop) / zoomLevel - def.h/2);
+        var dropX = (e.clientX - rect.left - canvas.clientLeft) / zoomLevel;
+        var dropY = (e.clientY - rect.top - canvas.clientTop) / zoomLevel;
+
+        var targetContainer = findContainerAtPoint(dropX, dropY);
 
         saveUndo();
+
+        var relX, relY;
+        if (targetContainer) {
+            var parentPos = getAbsolutePosition(targetContainer);
+            relX = Math.max(0, Math.round(dropX - parentPos.x - def.w/2));
+            relY = Math.max(0, Math.round(dropY - parentPos.y - def.h/2));
+        } else {
+            relX = Math.max(0, Math.round(dropX - def.w/2));
+            relY = Math.max(0, Math.round(dropY - def.h/2));
+        }
+
         var ctrl = {
             id: nextId++,
             type: type,
-            x: Math.round(x),
-            y: Math.round(y),
+            x: relX,
+            y: relY,
             w: def.w,
             h: def.h,
             name: '',
             content: def.content,
             properties: {},
-            zIndex: controls.length + 1
+            zIndex: (targetContainer ? targetContainer.children.length : controls.length) + 1,
+            children: [],
+            parentId: targetContainer ? targetContainer.id : null
         };
-        controls.push(ctrl);
+
+        if (targetContainer) {
+            targetContainer.children.push(ctrl);
+        } else {
+            controls.push(ctrl);
+        }
+
         selectControl(ctrl.id);
         scheduleAutoSync();
     });
@@ -1605,12 +1804,43 @@ body {
 
     document.addEventListener('mousemove', function(e) {
         if (isDraggingControl && selectedId !== null) {
-            var ctrl = controls.find(function(c) { return c.id === selectedId; });
+            var ctrl = findControlById(selectedId);
             if (!ctrl) return;
             var dx = (e.clientX - dragStartX) / zoomLevel;
             var dy = (e.clientY - dragStartY) / zoomLevel;
             ctrl.x = Math.max(0, dragOrigX + dx);
             ctrl.y = Math.max(0, dragOrigY + dy);
+
+            // Detect container under dragged control for potential nesting
+            var absPos = getAbsolutePosition(ctrl);
+            var centerX = absPos.x + ctrl.w / 2;
+            var centerY = absPos.y + ctrl.h / 2;
+            var nestTarget = findContainerAtPoint(centerX, centerY, ctrl.id);
+            // Prevent nesting into own descendants
+            if (nestTarget && isDescendantOf(nestTarget.id, ctrl.id)) {
+                nestTarget = null;
+            }
+            // Skip if already parented to this container
+            if (nestTarget && ctrl.parentId === nestTarget.id) {
+                nestTarget = null;
+            }
+            dragNestTarget = nestTarget;
+
+            // Update nest indicator tooltip
+            if (dragNestTarget) {
+                nestIndicator.textContent = 'Hold Alt to nest into ' + dragNestTarget.type;
+                nestIndicator.style.display = 'block';
+                nestIndicator.style.left = (centerX) + 'px';
+                nestIndicator.style.top = (absPos.y - 20) + 'px';
+            } else if (ctrl.parentId) {
+                nestIndicator.textContent = 'Hold Alt to un-nest from parent';
+                nestIndicator.style.display = 'block';
+                nestIndicator.style.left = (centerX) + 'px';
+                nestIndicator.style.top = (absPos.y - 20) + 'px';
+            } else {
+                nestIndicator.style.display = 'none';
+            }
+
             render();
             updateProperties();
         }
@@ -1629,7 +1859,38 @@ body {
         }
     });
 
-    document.addEventListener('mouseup', function() {
+    document.addEventListener('mouseup', function(e) {
+        if (isDraggingControl && selectedId !== null && e.altKey) {
+            var ctrl = findControlById(selectedId);
+            if (ctrl) {
+                var absPos = getAbsolutePosition(ctrl);
+                if (dragNestTarget) {
+                    // Nest into the target container
+                    saveUndo();
+                    removeControlFromTree(ctrl.id);
+                    var parentPos = getAbsolutePosition(dragNestTarget);
+                    ctrl.x = Math.max(0, Math.round(absPos.x - parentPos.x));
+                    ctrl.y = Math.max(0, Math.round(absPos.y - parentPos.y));
+                    ctrl.parentId = dragNestTarget.id;
+                    ctrl.zIndex = dragNestTarget.children.length + 1;
+                    dragNestTarget.children.push(ctrl);
+                } else if (ctrl.parentId) {
+                    // Un-nest to canvas root
+                    saveUndo();
+                    removeControlFromTree(ctrl.id);
+                    ctrl.x = Math.max(0, Math.round(absPos.x));
+                    ctrl.y = Math.max(0, Math.round(absPos.y));
+                    ctrl.parentId = null;
+                    ctrl.zIndex = controls.length + 1;
+                    controls.push(ctrl);
+                }
+            }
+        }
+        // Clean up nest indicator and drop-target highlights
+        nestIndicator.style.display = 'none';
+        canvas.querySelectorAll('.drop-target').forEach(function(el) { el.classList.remove('drop-target'); });
+        dragNestTarget = null;
+
         if (isDraggingControl || isResizing) {
             scheduleAutoSync();
         }
@@ -1659,7 +1920,7 @@ body {
     }
 
     function handleResize(e) {
-        var ctrl = controls.find(function(c) { return c.id === selectedId; });
+        var ctrl = findControlById(selectedId);
         if (!ctrl) return;
 
         var dx = (e.clientX - dragStartX) / zoomLevel;
@@ -1698,7 +1959,7 @@ body {
             return;
         }
 
-        var ctrl = controls.find(function(c) { return c.id === selectedId; });
+        var ctrl = findControlById(selectedId);
         if (!ctrl) { noSel.style.display = 'block'; fields.style.display = 'none'; return; }
 
         noSel.style.display = 'none';
@@ -1839,7 +2100,7 @@ body {
     window.deleteSelected = function() {
         if (selectedId === null) return;
         saveUndo();
-        controls = controls.filter(function(c) { return c.id !== selectedId; });
+        removeControlFromTree(selectedId);
         selectedId = null;
         render();
         updateProperties();
@@ -1849,7 +2110,7 @@ body {
 
     window.duplicateSelected = function() {
         if (selectedId === null) return;
-        var ctrl = controls.find(function(c) { return c.id === selectedId; });
+        var ctrl = findControlById(selectedId);
         if (!ctrl) return;
         saveUndo();
         var dup = JSON.parse(JSON.stringify(ctrl));
@@ -1857,7 +2118,25 @@ body {
         dup.x += 20;
         dup.y += 20;
         dup.name = '';
-        controls.push(dup);
+        dup.parentId = ctrl.parentId;
+        if (dup.children) {
+            (function reassignIds(c) {
+                c.id = nextId++;
+                if (c.children) {
+                    for (var i = 0; i < c.children.length; i++) {
+                        c.children[i].parentId = c.id;
+                        reassignIds(c.children[i]);
+                    }
+                }
+            })(dup);
+        }
+        if (ctrl.parentId) {
+            var parent = findControlById(ctrl.parentId);
+            if (parent) parent.children.push(dup);
+            else controls.push(dup);
+        } else {
+            controls.push(dup);
+        }
         selectControl(dup.id);
         hideContextMenu();
         scheduleAutoSync();
@@ -1865,16 +2144,18 @@ body {
 
     window.bringToFront = function() {
         if (selectedId === null) return;
-        var maxZ = Math.max.apply(null, controls.map(function(c) { return c.zIndex || 1; }).concat([0]));
-        var ctrl = controls.find(function(c) { return c.id === selectedId; });
+        var allCtrls = getAllControls();
+        var maxZ = Math.max.apply(null, allCtrls.map(function(c) { return c.zIndex || 1; }).concat([0]));
+        var ctrl = findControlById(selectedId);
         if (ctrl) { ctrl.zIndex = maxZ + 1; render(); scheduleAutoSync(); }
         hideContextMenu();
     };
 
     window.sendToBack = function() {
         if (selectedId === null) return;
-        var minZ = Math.min.apply(null, controls.map(function(c) { return c.zIndex || 1; }).concat([999]));
-        var ctrl = controls.find(function(c) { return c.id === selectedId; });
+        var allCtrls = getAllControls();
+        var minZ = Math.min.apply(null, allCtrls.map(function(c) { return c.zIndex || 1; }).concat([999]));
+        var ctrl = findControlById(selectedId);
         if (ctrl) { ctrl.zIndex = Math.max(1, minZ - 1); render(); scheduleAutoSync(); }
         hideContextMenu();
     };
@@ -1913,7 +2194,7 @@ body {
         if (selectedId !== null && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.key) >= 0) {
             if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT')) return;
             e.preventDefault();
-            var ctrl = controls.find(function(c) { return c.id === selectedId; });
+            var ctrl = findControlById(selectedId);
             if (!ctrl) return;
             var step = e.shiftKey ? 10 : 1;
             saveUndo();
@@ -1937,8 +2218,9 @@ body {
                 var occIdx = typeof message.occurrenceIndex === 'number' ? message.occurrenceIndex : -1;
                 var found = null;
                 var matchCount = 0;
-                for (var hi = 0; hi < controls.length; hi++) {
-                    var c = controls[hi];
+                var allCtrls = getAllControls();
+                for (var hi = 0; hi < allCtrls.length; hi++) {
+                    var c = allCtrls[hi];
                     if (c.type === elemType && c.name === elemName) {
                         if (occIdx < 0 || matchCount === occIdx) {
                             found = c;
@@ -1960,11 +2242,7 @@ body {
                     var prevSelectedId = selectedId;
                     controls = parsed;
                     // Try to preserve selection
-                    var found = false;
-                    for (var si = 0; si < controls.length; si++) {
-                        if (controls[si].id === prevSelectedId) { found = true; break; }
-                    }
-                    if (!found) selectedId = null;
+                    if (!findControlById(prevSelectedId)) selectedId = null;
                 }
                 if (!documentLoaded) {
                     documentLoaded = true;
