@@ -10,7 +10,7 @@ Much obliged!
 </a>
 
 
-# XAML / AXAML / Razor / HTML Visual Designer
+# XAML / AXAML / Razor / HTML / Vue / React Visual Designer
 
 A VS Code extension that provides a full **WYSIWYG visual designer** for `.xaml`, `.axaml`, `.razor`, `.html`, and `.htm` files.  
 Design UIs by dragging controls onto a canvas — no hand-editing markup required. Changes sync back to the source file automatically. <br> <br>
@@ -60,27 +60,35 @@ See the LICENSE file for full terms.
 9. [HTML Designer](#html-designer)
    - [Available Elements](#html-available-elements)
    - [Properties Panel — HTML](#properties-panel--html)
-10. [Live Preview](#live-preview)
+10. [Vue Designer](#vue-designer)
+    - [Available Elements](#vue-available-elements)
+    - [Properties Panel — Vue](#properties-panel--vue)
+11. [React Designer](#react-designer)
+    - [Available Elements](#react-available-elements)
+    - [Properties Panel — React](#properties-panel--react)
+12. [Live Preview](#live-preview)
     - [HTML Preview](#html-preview)
     - [XAML / AXAML Preview](#xaml--axaml-preview)
     - [Razor Preview](#razor-preview)
-11. [Keyboard Shortcuts](#keyboard-shortcuts)
-12. [Toolbar Reference](#toolbar-reference)
-13. [Context Menu Reference](#context-menu-reference)
-14. [Development Guide](#development-guide)
-15. [Project Structure](#project-structure)
+13. [Keyboard Shortcuts](#keyboard-shortcuts)
+14. [Toolbar Reference](#toolbar-reference)
+15. [Context Menu Reference](#context-menu-reference)
+16. [Development Guide](#development-guide)
+17. [Project Structure](#project-structure)
 
 ---
 
 ## Overview
 
-**XAML/AXAML/Razor/HTML Visual Designer** is a VS Code custom editor extension that replaces the raw text view of markup files with an interactive design canvas. It is aimed at developers working with:
+**XAML/AXAML/Razor/HTML/Vue/React Visual Designer** is a VS Code custom editor extension that replaces the raw text view of markup files with an interactive design canvas. It is aimed at developers working with:
 
 | File Type | Framework / Use-case |
 |-----------|---------------------|
 | `.xaml` / `.axaml` | Avalonia UI (WPF-like cross-platform UI framework) |
 | `.razor` | Blazor (ASP.NET Core component model) |
 | `.html` / `.htm` | Plain HTML / static web pages |
+| `.vue` | Vue.js Single File Components |
+| `.jsx` / `.tsx` | React / React + TypeScript components |
 
 The extension is read-write: it parses the existing markup into a visual representation and can write the resulting layout back to disk as valid, formatted markup.
 
@@ -90,7 +98,7 @@ The extension is read-write: it parses the existing markup into a visual represe
 
 | Feature | Details |
 |---------|---------|
-| **Drag-and-drop toolbox** | 50+ XAML controls, 18 Blazor components, 60+ HTML elements |
+| **Drag-and-drop toolbox** | 50+ XAML controls, 18 Blazor components, 60+ HTML elements (shared across HTML, Vue, and React designers) |
 | **Visual canvas** | Absolute-positioned drag surface with pixel-accurate placement |
 | **Resize handles** | 8-point handles (4 corners + 4 edges) on every selected control |
 | **Resizable panes** | Drag the splitter borders between the Toolbox, Canvas, and Properties panels to resize them |
@@ -103,8 +111,8 @@ The extension is read-write: it parses the existing markup into a visual represe
 | **Bi-directional sync** | External file edits update the canvas automatically |
 | **Bidirectional cursor sync** | Clicking a control in the designer highlights the matching element in the text editor, and moving the text-editor cursor highlights the matching control on the canvas |
 | **Zoom & Pan** | Ctrl+Scroll to zoom the canvas (10%–500%); middle-mouse-button drag to pan; click the zoom badge to reset to 100% |
-| **Control nesting** | Container controls accept child controls via drag-and-drop in all three designers (XAML, Razor, HTML), producing proper parent–child markup. Hold Alt while releasing a dragged control to nest/un-nest. |
-| **Three designer modes** | Separate, purpose-built designers for XAML, Razor, and HTML |
+| **Control nesting** | Container controls accept child controls via drag-and-drop in all designers (XAML, Razor, HTML, Vue, React), producing proper parent–child markup. Hold Alt while releasing a dragged control to nest/un-nest. |
+| **Five designer modes** | Separate, purpose-built designers for XAML, Razor, HTML, Vue, and React |
 | **HTML Live Preview** | Preview HTML files in a side panel inside VS Code with auto-refresh |
 | **XAML / Razor Preview** | Preview XAML/AXAML and Razor files with approximate HTML rendering in a side panel |
 | **Explorer context menu** | Right-click files in the Explorer to open directly with the designer |
@@ -214,6 +222,8 @@ There are three ways to open the visual designer:
    - `XAML/AXAML Visual Designer` — for `.xaml` / `.axaml` files
    - `Razor Visual Designer` — for `.razor` files
    - `HTML Visual Designer` — for `.html` / `.htm` files
+   - `Vue Visual Designer` — for `.vue` files
+   - `React Visual Designer` — for `.jsx` / `.tsx` files
 
 #### 2. File Explorer Context Menu
 
@@ -222,6 +232,8 @@ Right-click any supported file in the **Explorer** file tree to see the relevant
 - `.xaml` / `.axaml` → **Open with XAML Visual Designer** and **Preview XAML/AXAML in Side Panel**
 - `.razor` → **Open with Razor Visual Designer** and **Preview Razor in Side Panel**
 - `.html` / `.htm` → **Open with HTML Visual Designer** and **Preview HTML in Side Panel**
+- `.vue` → **Open with Vue Visual Designer**
+- `.jsx` / `.tsx` → **Open with React Visual Designer**
 
 This allows you to open the designer without opening the file first.
 
@@ -234,6 +246,8 @@ You can also run the corresponding command from the Command Palette (`Ctrl+Shift
 | `Open with XAML Visual Designer` | Opens the active `.xaml`/`.axaml` file in the XAML designer |
 | `Open with Razor Visual Designer` | Opens the active `.razor` file in the Razor designer |
 | `Open with HTML Visual Designer` | Opens the active `.html`/`.htm` file in the HTML designer |
+| `Open with Vue Visual Designer` | Opens the active `.vue` file in the Vue designer |
+| `Open with React Visual Designer` | Opens the active `.jsx`/`.tsx` file in the React designer |
 | `Preview HTML in Side Panel` | Opens a live HTML preview beside the editor |
 | `Preview XAML/AXAML in Side Panel` | Opens an approximate HTML preview of a XAML/AXAML file beside the editor |
 | `Preview Razor in Side Panel` | Opens an approximate HTML preview of a Razor file beside the editor |
@@ -547,6 +561,92 @@ The HTML designer generates standard HTML5 markup (`.html` / `.htm`).
 
 ---
 
+## Vue Designer
+
+The Vue designer edits the `<template>` section of Vue Single File Components (`.vue` files). The `<script>` and `<style>` blocks are preserved as-is and are not modified by the designer.
+
+### Vue Available Elements
+
+The Vue designer provides the same full set of HTML elements available in the HTML designer, organized into the same categories:
+
+#### Structure
+
+`div`, `span`, `p`, `h1`–`h6`, `a`, `hr`, `br`, `blockquote`, `pre`, `code`
+
+#### Forms
+
+`input`, `textarea`, `select`, `button`, `label`, `form`, `fieldset`, `legend`, `output`, `meter`, `progress`, `datalist`
+
+#### Media
+
+`img`, `video`, `audio`, `canvas`, `svg`, `iframe`, `picture`, `source`, `figure`, `figcaption`
+
+#### Lists & Tables
+
+`ul`, `ol`, `li`, `dl`, `dt`, `dd`, `table`, `thead`, `tbody`, `tfoot`, `tr`, `th`, `td`, `caption`, `colgroup`, `col`
+
+#### Semantic / Layout
+
+`nav`, `header`, `footer`, `section`, `article`, `aside`, `main`, `details`, `summary`, `dialog`, `template`, `slot`
+
+### Properties Panel — Vue
+
+| Property | Attribute | Description |
+|----------|-----------|-------------|
+| id | `id` | Element identifier |
+| class | `class` | CSS class(es) |
+| X | `style: left` | Horizontal position |
+| Y | `style: top` | Vertical position |
+| Width | `style: width` | Element width |
+| Height | `style: height` | Element height |
+| type | `type` | Input / button type |
+| Custom attributes | Any | Any standard HTML attribute |
+
+---
+
+## React Designer
+
+The React designer edits the JSX return block of React component files (`.jsx` / `.tsx`). The surrounding JavaScript/TypeScript code (imports, state, hooks, etc.) is preserved as-is and is not modified by the designer. The designer generates JSX-compliant output with `className` instead of `class`, `htmlFor` instead of `for`, and JSX-style inline styles.
+
+### React Available Elements
+
+The React designer provides the same full set of HTML elements available in the HTML designer, organized into the same categories:
+
+#### Structure
+
+`div`, `span`, `p`, `h1`–`h6`, `a`, `hr`, `br`, `blockquote`, `pre`, `code`
+
+#### Forms
+
+`input`, `textarea`, `select`, `button`, `label`, `form`, `fieldset`, `legend`, `output`, `meter`, `progress`, `datalist`
+
+#### Media
+
+`img`, `video`, `audio`, `canvas`, `svg`, `iframe`, `picture`, `source`, `figure`, `figcaption`
+
+#### Lists & Tables
+
+`ul`, `ol`, `li`, `dl`, `dt`, `dd`, `table`, `thead`, `tbody`, `tfoot`, `tr`, `th`, `td`, `caption`, `colgroup`, `col`
+
+#### Semantic / Layout
+
+`nav`, `header`, `footer`, `section`, `article`, `aside`, `main`, `details`, `summary`, `dialog`, `template`, `slot`
+
+### Properties Panel — React
+
+| Property | Attribute | Description |
+|----------|-----------|-------------|
+| id | `id` | Element identifier |
+| className | `className` | CSS class(es) (JSX equivalent of `class`) |
+| X | `style: left` | Horizontal position |
+| Y | `style: top` | Vertical position |
+| Width | `style: width` | Element width |
+| Height | `style: height` | Element height |
+| type | `type` | Input / button type |
+| Custom attributes | Any | Any standard JSX attribute |
+
+---
+
 ## Live Preview
 
 The **Live Preview** feature lets you preview markup files directly inside VS Code, in a side panel next to the editor. The preview updates automatically when the file is edited or saved.
@@ -690,12 +790,16 @@ vs-code-wysiwyg/
 │   ├── xamlDesignerProvider.ts   # CustomTextEditorProvider for .xaml / .axaml
 │   ├── razorDesignerProvider.ts  # CustomTextEditorProvider for .razor
 │   ├── htmlDesignerProvider.ts   # CustomTextEditorProvider for .html / .htm
+│   ├── vueDesignerProvider.ts    # CustomTextEditorProvider for .vue
+│   ├── reactDesignerProvider.ts  # CustomTextEditorProvider for .jsx / .tsx
 │   ├── htmlPreviewProvider.ts    # HTML live preview panel provider
 │   ├── previewProvider.ts        # Unified preview provider for XAML/AXAML, Razor, and HTML files
 │   ├── xamlDocument.ts           # XAML document model / parser helpers
 │   ├── webviewContent.ts         # Webview HTML + embedded JS for the XAML designer
 │   ├── razorWebviewContent.ts    # Webview HTML + embedded JS for the Razor designer
-│   └── htmlWebviewContent.ts     # Webview HTML + embedded JS for the HTML designer
+│   ├── htmlWebviewContent.ts     # Webview HTML + embedded JS for the HTML designer
+│   ├── vueWebviewContent.ts      # Webview HTML + embedded JS for the Vue designer
+│   └── reactWebviewContent.ts    # Webview HTML + embedded JS for the React designer
 ├── out/                          # Compiled JavaScript output (generated by tsc)
 ├── package.json                  # Extension manifest, scripts, and dependencies
 ├── tsconfig.json                 # TypeScript compiler configuration
