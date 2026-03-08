@@ -10,7 +10,7 @@ Much obliged!
 </a>
 
 
-# XAML / AXAML / Razor / HTML / Vue / React Visual Designer
+# Universal all-in-one XAML / AXAML / Razor / HTML / Vue / React Visual Designer
 
 A VS Code extension that provides a full **WYSIWYG visual designer** for `.xaml`, `.axaml`, `.razor`, `.html`, `.htm`, `.vue`, `.jsx`, and `.tsx` files.  
 Design UIs by dragging controls onto a canvas — no hand-editing markup required. Changes sync back to the source file automatically. <br> <br>
