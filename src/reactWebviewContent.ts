@@ -1169,7 +1169,30 @@ body {
         }
     }
 
-    function parseBodyElements(htmlPortion) {
+    function convertJsxToHtml(jsx) {
+        // Convert JSX style={{...}} to HTML style="..."
+        var result = jsx.replace(/style=\\{\\{([^}]*)\\}\\}/g, function(match, inner) {
+            var css = inner.replace(/(\\w+)\\s*:\\s*"([^"]*)"/g, '$1:$2')
+                           .replace(/(\\w+)\\s*:\\s*(\\d+)/g, '$1:$2px')
+                           .replace(/,/g, ';');
+            return 'style="' + css + '"';
+        });
+        // Convert JSX attribute names to HTML
+        result = result.replace(/\\bclassName=/g, 'class=');
+        result = result.replace(/\\bhtmlFor=/g, 'for=');
+        result = result.replace(/\\btabIndex=/g, 'tabindex=');
+        result = result.replace(/\\breadOnly\\b/g, 'readonly');
+        result = result.replace(/\\bmaxLength=/g, 'maxlength=');
+        result = result.replace(/\\bcolSpan=/g, 'colspan=');
+        result = result.replace(/\\browSpan=/g, 'rowspan=');
+        result = result.replace(/\\bnoValidate\\b/g, 'novalidate');
+        result = result.replace(/\\bautoPlay\\b/g, 'autoplay');
+        result = result.replace(/\\bautoComplete=/g, 'autocomplete=');
+        return result;
+    }
+
+    function parseBodyElements(jsxPortion) {
+        var htmlPortion = convertJsxToHtml(jsxPortion);
         var parser = new DOMParser();
         var doc = parser.parseFromString('<html><body>' + htmlPortion + '</body></html>', 'text/html');
         var body = doc.body;

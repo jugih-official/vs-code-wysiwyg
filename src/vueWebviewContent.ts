@@ -1128,7 +1128,7 @@ body {
             var trimmed = text.trim();
             if (!trimmed) return [];
 
-            // Extract <script>...</script> block (preserve as-is)
+            // Extract vue script block (preserve as-is)
             vueScriptBlock = '';
             var scriptMatch = trimmed.match(/<script[^>]*>[\\s\\S]*?<\\/script>/i);
             if (scriptMatch) {
