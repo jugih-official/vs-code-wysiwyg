@@ -684,6 +684,7 @@ body {
     var splitterStartX = 0;
     var splitterStartWidth = 0;
     var autoSyncTimer = null;
+    var pendingSyncAck = 0;
     var zoomLevel = 1;
     var isPanning = false;
     var panStartX = 0;
@@ -2149,6 +2150,7 @@ body {
 
     window.syncToReact = function() {
         var reactOutput = generateReactOutput();
+        pendingSyncAck++;
         vscode.postMessage({ type: 'updateReact', content: reactOutput });
     };
 
@@ -2200,7 +2202,7 @@ body {
         var message = event.data;
         switch (message.type) {
             case 'highlightElement': {
-                if (isDraggingControl || isResizing || isDraggingNew || autoSyncTimer) break;
+                if (isDraggingControl || isResizing || isDraggingNew || autoSyncTimer || pendingSyncAck > 0) break;
                 var elemType = message.elementType || '';
                 var elemName = message.elementName || '';
                 var occIdx = typeof message.occurrenceIndex === 'number' ? message.occurrenceIndex : -1;
@@ -2224,8 +2226,12 @@ body {
                 }
                 break;
             }
+            case 'syncAck': {
+                if (pendingSyncAck > 0) pendingSyncAck--;
+                break;
+            }
             case 'documentUpdate': {
-                if (isDraggingControl || isResizing || isDraggingNew || autoSyncTimer) break;
+                if (isDraggingControl || isResizing || isDraggingNew || autoSyncTimer || pendingSyncAck > 0) break;
                 var parsed = parseReactContent(message.content);
                 if (parsed) {
                     var prevSelectedId = selectedId;
