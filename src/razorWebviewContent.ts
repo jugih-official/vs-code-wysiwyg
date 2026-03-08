@@ -1515,6 +1515,7 @@ body {
         dragStartY = e.clientY;
         dragOrigX = ctrl.x;
         dragOrigY = ctrl.y;
+        saveUndo();
     }
 
     document.addEventListener('mousemove', function(e) {
