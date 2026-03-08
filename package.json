@@ -4,7 +4,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "displayName": "XAML/AXAML/Razor/HTML/Vue/React Visual Designer",
   "description": "Your one stop for Universal all-in-one WYSIWYG visual designer for .xaml, .axaml, .razor, .html, .htm, .vue, .jsx and .tsx files with drag-and-drop controls and resizing",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "publisher": "jugih-official",
  "repository": {  "type": "git",  "url": "https://github.com/jugih-official/vs-code-wysiwyg" },
  "engines": {
