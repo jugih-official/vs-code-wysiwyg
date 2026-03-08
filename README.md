@@ -103,7 +103,7 @@ The extension is read-write: it parses the existing markup into a visual represe
 | **Bi-directional sync** | External file edits update the canvas automatically |
 | **Bidirectional cursor sync** | Clicking a control in the designer highlights the matching element in the text editor, and moving the text-editor cursor highlights the matching control on the canvas |
 | **Zoom & Pan** | Ctrl+Scroll to zoom the canvas (10%–500%); middle-mouse-button drag to pan; click the zoom badge to reset to 100% |
-| **Control nesting (XAML)** | Container controls (StackPanel, Grid, Canvas, Border, etc.) accept child controls via drag-and-drop, producing proper parent–child XAML markup |
+| **Control nesting** | Container controls accept child controls via drag-and-drop in all three designers (XAML, Razor, HTML), producing proper parent–child markup. Hold Alt while releasing a dragged control to nest/un-nest. |
 | **Three designer modes** | Separate, purpose-built designers for XAML, Razor, and HTML |
 | **HTML Live Preview** | Preview HTML files in a side panel inside VS Code with auto-refresh |
 | **XAML / Razor Preview** | Preview XAML/AXAML and Razor files with approximate HTML rendering in a side panel |
@@ -392,7 +392,17 @@ All control coordinates are expressed as `Canvas.Left` / `Canvas.Top` absolute p
 
 ### Control Nesting
 
-Container controls (e.g. `StackPanel`, `Grid`, `Canvas`, `Border`, `DockPanel`, `WrapPanel`) can hold child controls. When you drag a new control from the toolbox and drop it onto a container, the container highlights to show it will become the parent. The generated XAML reflects this as properly indented, parent–child markup:
+Container controls can hold child controls in all three designers (XAML, Razor, HTML). When you drag a new control from the toolbox and drop it onto a container, the container highlights with a dashed outline to show it will become the parent. The generated markup reflects this as properly indented, parent–child content.
+
+**Nesting via drag-and-drop from toolbox:** Simply drop a new element onto an existing container on the canvas. The container highlights automatically.
+
+**Re-parenting existing controls (Alt+drag):** Drag an existing control over a container, then hold **Alt** when you release the mouse button to nest it into that container. If the control is already nested, hold **Alt** while releasing outside any container to un-nest it back to the canvas root.
+
+Nested controls are rendered above their parent in z-order and their positions are relative to the parent container's origin.
+
+#### XAML Container Types
+
+`Grid`, `StackPanel`, `DockPanel`, `WrapPanel`, `Canvas`, `UniformGrid`, `Panel`, `RelativePanel`, `VirtualizingStackPanel`, `Border`, `Viewbox`, `Expander`, `TabControl`, `ScrollViewer`, and more.
 
 ```xml
 <StackPanel Canvas.Left="40" Canvas.Top="60" Width="200" Height="150">
@@ -401,7 +411,20 @@ Container controls (e.g. `StackPanel`, `Grid`, `Canvas`, `Border`, `DockPanel`, 
 </StackPanel>
 ```
 
-Nested controls are rendered above their parent in z-order and their positions are relative to the parent container's origin.
+#### HTML / Blazor Container Types
+
+`div`, `section`, `article`, `nav`, `aside`, `main`, `header`, `footer`, `form`, `fieldset`, `ul`, `ol`, `li`, `table`, `tr`, `td`, `th`, `details`, `dialog`, `figure`, `blockquote`, `pre`, `code`, `a`, `button`, `label`, `select`, `video`, `audio`, `picture`, `canvas`, `svg`, `template`, `slot`, and many more.
+
+```html
+<div style="position:absolute;left:20px;top:30px;width:300px;height:200px;">
+    <p style="position:absolute;left:10px;top:10px;width:200px;height:30px;">Hello</p>
+    <button style="position:absolute;left:10px;top:50px;width:100px;height:32px;">Click</button>
+</div>
+```
+
+#### Blazor-Specific Container Components
+
+`LayoutView`, `AuthorizeView`, `Router`, `RouteView`, `FocusOnNavigate`, `ErrorBoundary`, `CascadingValue`, `CascadingAuthenticationState`, `HeadOutlet`, `EditForm`, and more.
 
 ### Properties Panel — XAML
 
