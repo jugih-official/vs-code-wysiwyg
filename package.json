@@ -2,9 +2,9 @@
   "name": "wysiwyg-designer",
   "icon": "images/icon.png",
   "license": "SEE LICENSE IN LICENSE",
-  "displayName": "XAML/AXAML/Razor/HTML Visual Designer",
-  "description": "WYSIWYG visual designer for .xaml, .axaml, .razor, .html and .htm files with drag-and-drop controls and resizing",
-  "version": "1.1.8",
+  "displayName": "XAML/AXAML/Razor/HTML/Vue/React Visual Designer",
+  "description": "WYSIWYG visual designer for .xaml, .axaml, .razor, .html, .htm, .vue, .jsx and .tsx files with drag-and-drop controls and resizing",
+  "version": "1.2.0",
   "publisher": "jugih-official",
  "repository": {  "type": "git",  "url": "https://github.com/jugih-official/vs-code-wysiwyg" },
  "engines": {
@@ -20,7 +20,11 @@
   "rich text",
   "blazor",
   "avalonia",
-  "preview"
+  "preview",
+  "vue",
+  "react",
+  "jsx",
+  "tsx"
 ],
   "activationEvents": [],
   "main": "./out/extension.js",
@@ -61,6 +65,29 @@
           }
         ],
         "priority": "option"
+      },
+      {
+        "viewType": "xamlDesigner.vueVisualEditor",
+        "displayName": "Vue Visual Designer",
+        "selector": [
+          {
+            "filenamePattern": "*.vue"
+          }
+        ],
+        "priority": "option"
+      },
+      {
+        "viewType": "xamlDesigner.reactVisualEditor",
+        "displayName": "React Visual Designer",
+        "selector": [
+          {
+            "filenamePattern": "*.jsx"
+          },
+          {
+            "filenamePattern": "*.tsx"
+          }
+        ],
+        "priority": "option"
       }
     ],
     "commands": [
@@ -77,6 +104,16 @@
       {
         "command": "xamlDesigner.openHtmlVisualEditor",
         "title": "Open with HTML Visual Designer",
+        "category": "WYSIWYG Designer"
+      },
+      {
+        "command": "xamlDesigner.openVueVisualEditor",
+        "title": "Open with Vue Visual Designer",
+        "category": "WYSIWYG Designer"
+      },
+      {
+        "command": "xamlDesigner.openReactVisualEditor",
+        "title": "Open with React Visual Designer",
         "category": "WYSIWYG Designer"
       },
       {
@@ -113,6 +150,16 @@
         {
           "command": "xamlDesigner.openHtmlVisualEditor",
           "when": "resourceExtname == .html || resourceExtname == .htm",
+          "group": "navigation"
+        },
+        {
+          "command": "xamlDesigner.openVueVisualEditor",
+          "when": "resourceExtname == .vue",
+          "group": "navigation"
+        },
+        {
+          "command": "xamlDesigner.openReactVisualEditor",
+          "when": "resourceExtname == .jsx || resourceExtname == .tsx",
           "group": "navigation"
         },
         {
@@ -163,6 +210,16 @@
           "command": "xamlDesigner.openHtmlVisualEditor",
           "when": "resourceExtname == .html || resourceExtname == .htm",
           "group": "navigation"
+        },
+        {
+          "command": "xamlDesigner.openVueVisualEditor",
+          "when": "resourceExtname == .vue",
+          "group": "navigation"
+        },
+        {
+          "command": "xamlDesigner.openReactVisualEditor",
+          "when": "resourceExtname == .jsx || resourceExtname == .tsx",
+          "group": "navigation"
         }
       ],
       "commandPalette": [
@@ -177,6 +234,14 @@
         {
           "command": "xamlDesigner.openHtmlVisualEditor",
           "when": "resourceExtname == .html || resourceExtname == .htm"
+        },
+        {
+          "command": "xamlDesigner.openVueVisualEditor",
+          "when": "resourceExtname == .vue"
+        },
+        {
+          "command": "xamlDesigner.openReactVisualEditor",
+          "when": "resourceExtname == .jsx || resourceExtname == .tsx"
         },
         {
           "command": "xamlDesigner.previewXaml",
