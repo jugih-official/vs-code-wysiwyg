@@ -95,8 +95,12 @@ export class ReactDesignerProvider implements vscode.CustomTextEditorProvider {
                     break;
                 case 'updateReact':
                     isInternalEdit = true;
-                    await this.updateDocument(document, message.content || '');
-                    isInternalEdit = false;
+                    try {
+                        await this.updateDocument(document, message.content || '');
+                    } finally {
+                        isInternalEdit = false;
+                        webviewPanel.webview.postMessage({ type: 'syncAck' });
+                    }
                     break;
                 case 'selectElement': {
                     const text = document.getText();
