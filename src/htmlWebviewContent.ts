@@ -1279,7 +1279,7 @@ body {
         var innerText = '';
         if (contentTypes.indexOf(tagName) >= 0) {
             for (var i = 0; i < el.childNodes.length; i++) {
-                if (el.childNodes[i].nodeType === 3) { // TEXT_NODE
+                if (el.childNodes[i].nodeType === Node.TEXT_NODE) {
                     innerText += el.childNodes[i].textContent;
                 }
             }
