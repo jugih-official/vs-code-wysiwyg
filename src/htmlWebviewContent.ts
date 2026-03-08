@@ -1126,6 +1126,7 @@ body {
     // =================== HTML PARSING ===================
     function parseHtmlContent(text) {
         try {
+            nextId = 1;
             var trimmed = text.trim();
             if (!trimmed) return [];
 
@@ -2222,6 +2223,7 @@ body {
         var message = event.data;
         switch (message.type) {
             case 'highlightElement': {
+                if (isDraggingControl || isResizing) break;
                 var elemType = message.elementType || '';
                 var elemName = message.elementName || '';
                 var occIdx = typeof message.occurrenceIndex === 'number' ? message.occurrenceIndex : -1;
@@ -2246,6 +2248,7 @@ body {
                 break;
             }
             case 'documentUpdate': {
+                if (isDraggingControl || isResizing) break;
                 var parsed = parseHtmlContent(message.content);
                 if (parsed) {
                     var prevSelectedId = selectedId;
