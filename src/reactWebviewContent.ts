@@ -685,6 +685,7 @@ body {
     var splitterStartWidth = 0;
     var autoSyncTimer = null;
     var pendingSyncAck = 0;
+    var pendingDocumentContent = null;
     var zoomLevel = 1;
     var isPanning = false;
     var panStartX = 0;
@@ -1122,23 +1123,53 @@ body {
     }
 
     // =================== HTML PARSING ===================
+    // Find the index of the closing ')' that matches the '(' at openIdx,
+    // using depth counting. Returns -1 if not found.
+    function findMatchingParen(str, openIdx) {
+        var depth = 0;
+        for (var i = openIdx; i < str.length; i++) {
+            var ch = str[i];
+            if (ch === '(') depth++;
+            else if (ch === ')') {
+                depth--;
+                if (depth === 0) return i;
+            }
+        }
+        return -1;
+    }
+
     function parseReactContent(text) {
         try {
             nextId = 1;
             var trimmed = text.trim();
             if (!trimmed) return [];
 
-            // Find JSX return block: return ( ... ) or return <...>
-            // Try to locate the return statement with parenthesized JSX
-            var returnParenMatch = trimmed.match(/return\\s*\\(([\\s\\S]*?)\\)\\s*;?\\s*\\}/);
-            if (returnParenMatch) {
+            // Find JSX return block: return ( ... )
+            // Use paren-matching instead of a non-greedy regex so that JSX with
+            // function-call expressions (e.g. onClick={() => setState(val)})
+            // does NOT cause premature termination of the match.
+            var returnSearchRe = /return\\s*\\(/g;
+            var rMatch;
+            while ((rMatch = returnSearchRe.exec(trimmed)) !== null) {
+                var openIdx = rMatch.index + rMatch[0].length - 1; // index of the '('
+                var closeIdx = findMatchingParen(trimmed, openIdx);
+                if (closeIdx < 0) continue;
+                var innerContent = trimmed.substring(openIdx + 1, closeIdx).trim();
+                // Only treat this as the JSX return block if it contains JSX tags
+                if (!/<\\w/.test(innerContent)) continue;
                 isFragment = false;
-                var beforeReturn = trimmed.substring(0, trimmed.indexOf(returnParenMatch[0]));
-                var afterReturn = trimmed.substring(trimmed.indexOf(returnParenMatch[0]) + returnParenMatch[0].length);
+                var beforeReturn = trimmed.substring(0, rMatch.index);
+                var afterParen = trimmed.substring(closeIdx + 1);
+                // Strip the trailing ';\n}' (or similar) that closes the return
+                // statement and the enclosing function body so that jsxSuffix
+                // only contains code that follows the function.
+                var trailingMatch = afterParen.match(/^\\s*;?\\s*\\}/);
+                var afterReturn = trailingMatch
+                    ? afterParen.substring(trailingMatch[0].length)
+                    : afterParen;
                 jsxPrefix = beforeReturn + 'return (\\n';
                 jsxSuffix = '\\n);\\n}' + afterReturn;
-                var jsxContent = returnParenMatch[1].trim();
-                return parseBodyElements(jsxContent);
+                return parseBodyElements(innerContent);
             }
 
             // Try return <tag>...</tag> without parens
@@ -1158,7 +1189,7 @@ body {
             fragmentPrefix = '';
             fragmentSuffix = '';
             // Try to find JSX-like content
-            var hasJsx = /<\w+[\\s>]/.test(trimmed);
+            var hasJsx = /<\\w+[\\s>]/.test(trimmed);
             if (hasJsx) {
                 return parseBodyElements(trimmed);
             }
@@ -2228,10 +2259,33 @@ body {
             }
             case 'syncAck': {
                 if (pendingSyncAck > 0) pendingSyncAck--;
+                // If a documentUpdate arrived while we were syncing, apply it now
+                // unless the user is mid-interaction or another sync is pending.
+                if (pendingSyncAck === 0 && pendingDocumentContent !== null) {
+                    var queuedContent = pendingDocumentContent;
+                    pendingDocumentContent = null;
+                    if (!isDraggingControl && !isResizing && !isDraggingNew && !autoSyncTimer) {
+                        var qParsed = parseReactContent(queuedContent);
+                        if (qParsed) {
+                            var qPrevId = selectedId;
+                            controls = qParsed;
+                            if (!findControlById(qPrevId)) selectedId = null;
+                        }
+                        if (!documentLoaded) { documentLoaded = true; }
+                        render();
+                        updateProperties();
+                    }
+                }
                 break;
             }
             case 'documentUpdate': {
-                if (isDraggingControl || isResizing || isDraggingNew || autoSyncTimer || pendingSyncAck > 0) break;
+                if (isDraggingControl || isResizing || isDraggingNew || autoSyncTimer) break;
+                if (pendingSyncAck > 0) {
+                    // A sync is in flight — save the incoming update so we can
+                    // apply it once the syncAck arrives, rather than discarding it.
+                    pendingDocumentContent = message.content;
+                    break;
+                }
                 var parsed = parseReactContent(message.content);
                 if (parsed) {
                     var prevSelectedId = selectedId;
