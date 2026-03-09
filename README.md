@@ -500,9 +500,10 @@ It supports both standard HTML elements and Blazor-specific components in a sing
 | `AuthorizeView` | Shows content based on authorisation state |
 | `CascadingValue` | Provides a cascading parameter down the tree |
 | `Virtualize` | Efficient rendering of large lists |
-| `PageTitle` | Sets the HTML page `<title>` |
 | `HeadContent` | Injects content into `<head>` |
 | `ErrorBoundary` | Catches render errors in child content |
+
+> **Note:** `<PageTitle>` elements are preserved as-is in Razor files and are not shown as editable controls in the designer. This prevents the page title from being corrupted during editing.
 
 ### Properties Panel — Razor
 

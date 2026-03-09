@@ -243,7 +243,7 @@ body {
 .design-control[data-type="AuthorizeView"]     { background: rgba(0,200,100,0.06); border: 1px dashed #00c86444; }
 .design-control[data-type="CascadingValue"]    { background: rgba(100,100,255,0.06); border: 1px dashed #6464ff44; }
 .design-control[data-type="Virtualize"]        { background: rgba(200,200,200,0.05); border: 1px dashed #888; }
-.design-control[data-type="PageTitle"]         { background: rgba(255,200,0,0.08); border: 1px dashed #ffc80055; }
+
 .design-control[data-type="HeadContent"]       { background: rgba(255,200,0,0.06); border: 1px dashed #ffc80044; }
 .design-control[data-type="ErrorBoundary"]     { background: rgba(255,50,50,0.08); border: 1px dashed #ff323255; }
 
@@ -558,9 +558,6 @@ body {
         <div class="toolbox-item" draggable="true" data-type="Virtualize">
             <span class="icon">Vz</span> Virtualize
         </div>
-        <div class="toolbox-item" draggable="true" data-type="PageTitle">
-            <span class="icon">PT</span> PageTitle
-        </div>
         <div class="toolbox-item" draggable="true" data-type="HeadContent">
             <span class="icon">HC</span> HeadContent
         </div>
@@ -653,6 +650,7 @@ body {
     // Preserved Razor sections
     var directiveLines = '';   // @page, @using, @inject, etc.
     var codeBlock = '';        // @code { ... }
+    var pageTitleTag = '';     // <PageTitle>...</PageTitle> preserved as-is
 
     var canvas = document.getElementById('designCanvas');
     var dropIndicator = document.getElementById('dropIndicator');
@@ -764,14 +762,13 @@ body {
         'AuthorizeView':     { w: 250, h: 150, content: '' },
         'CascadingValue':    { w: 250, h: 150, content: '' },
         'Virtualize':        { w: 250, h: 200, content: '' },
-        'PageTitle':         { w: 200, h: 28,  content: 'Page Title' },
         'HeadContent':       { w: 200, h: 60,  content: '' },
         'ErrorBoundary':     { w: 250, h: 150, content: '' }
     };
 
     // Types whose text content appears between open/close tags
     var contentTypes = ['button', 'label', 'p', 'span', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'li', 'th', 'td', 'PageTitle'];
+        'li', 'th', 'td'];
 
     // HTML void / self-closing elements
     var selfClosingTypes = ['input', 'hr', 'br',
@@ -1004,6 +1001,14 @@ body {
             }
             htmlPortion = afterDirectives.trim();
 
+            // --- 3b. Extract <PageTitle>...</PageTitle> (preserve as-is, not an editable control) ---
+            pageTitleTag = '';
+            var ptMatch = htmlPortion.match(/<PageTitle[^>]*>([\\s\\S]*?)<\\/PageTitle\\s*>/);
+            if (ptMatch) {
+                pageTitleTag = ptMatch[0];
+                htmlPortion = htmlPortion.replace(ptMatch[0], '').trim();
+            }
+
             // --- 4. Parse HTML elements using regex ---
             var allTypeNames = Object.keys(controlDefaults);
             var parsed = [];
@@ -1099,6 +1104,11 @@ body {
         // Directives at the top
         if (directiveLines) {
             razor += directiveLines + NL + NL;
+        }
+
+        // Preserved <PageTitle> element (not editable)
+        if (pageTitleTag) {
+            razor += pageTitleTag + NL + NL;
         }
 
         // Container div for absolute positioning
@@ -1360,8 +1370,6 @@ body {
                 return '<span class="control-label" style="pointer-events:none;color:#6464ff88;font-size:10px">&#8595; CascadingValue</span>';
             case 'Virtualize':
                 return '<span class="control-label" style="pointer-events:none;color:#888;font-size:10px">&#8942; Virtualize</span>';
-            case 'PageTitle':
-                return '<span class="control-label" style="pointer-events:none;font-weight:bold">' + esc(ctrl.content || 'Page Title') + '</span>';
             case 'HeadContent':
                 return '<span class="control-label" style="pointer-events:none;color:#ffc80088;font-size:10px">&lt;HeadContent&gt;</span>';
             case 'ErrorBoundary':

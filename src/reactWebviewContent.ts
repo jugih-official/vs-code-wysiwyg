@@ -685,7 +685,7 @@ body {
     var splitterStartWidth = 0;
     var autoSyncTimer = null;
     var pendingSyncAck = 0;
-    var pendingDocumentContent = null;
+    var lastSyncedContent = '';
     var zoomLevel = 1;
     var isPanning = false;
     var panStartX = 0;
@@ -2181,6 +2181,7 @@ body {
 
     window.syncToReact = function() {
         var reactOutput = generateReactOutput();
+        lastSyncedContent = reactOutput;
         pendingSyncAck++;
         vscode.postMessage({ type: 'updateReact', content: reactOutput });
     };
@@ -2259,31 +2260,15 @@ body {
             }
             case 'syncAck': {
                 if (pendingSyncAck > 0) pendingSyncAck--;
-                // If a documentUpdate arrived while we were syncing, apply it now
-                // unless the user is mid-interaction or another sync is pending.
-                if (pendingSyncAck === 0 && pendingDocumentContent !== null) {
-                    var queuedContent = pendingDocumentContent;
-                    pendingDocumentContent = null;
-                    if (!isDraggingControl && !isResizing && !isDraggingNew && !autoSyncTimer) {
-                        var qParsed = parseReactContent(queuedContent);
-                        if (qParsed) {
-                            var qPrevId = selectedId;
-                            controls = qParsed;
-                            if (!findControlById(qPrevId)) selectedId = null;
-                        }
-                        if (!documentLoaded) { documentLoaded = true; }
-                        render();
-                        updateProperties();
-                    }
-                }
                 break;
             }
             case 'documentUpdate': {
                 if (isDraggingControl || isResizing || isDraggingNew || autoSyncTimer) break;
-                if (pendingSyncAck > 0) {
-                    // A sync is in flight — save the incoming update so we can
-                    // apply it once the syncAck arrives, rather than discarding it.
-                    pendingDocumentContent = message.content;
+                if (pendingSyncAck > 0) break;
+                // Skip re-parse when the content matches what we last synced —
+                // this is our own edit echoing back and controls are already correct.
+                if (lastSyncedContent && message.content === lastSyncedContent) {
+                    if (!documentLoaded) { documentLoaded = true; }
                     break;
                 }
                 var parsed = parseReactContent(message.content);
