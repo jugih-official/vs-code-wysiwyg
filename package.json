@@ -6,26 +6,29 @@
   "description": "Your one stop for Universal all-in-one WYSIWYG visual designer for .xaml, .axaml, .razor, .html, .htm, .vue, .jsx and .tsx files with drag-and-drop controls and resizing",
   "version": "1.2.6",
   "publisher": "jugih-official",
- "repository": {  "type": "git",  "url": "https://github.com/jugih-official/vs-code-wysiwyg" },
- "engines": {
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jugih-official/vs-code-wysiwyg"
+  },
+  "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
     "Formatters"
   ],
-"keywords": [
-  "wysiwyg",
-  "html editor",
-  "visual editor",
-  "rich text",
-  "blazor",
-  "avalonia",
-  "preview",
-  "vue",
-  "react",
-  "jsx",
-  "tsx"
-],
+  "keywords": [
+    "wysiwyg",
+    "html editor",
+    "visual editor",
+    "rich text",
+    "blazor",
+    "avalonia",
+    "preview",
+    "vue",
+    "react",
+    "jsx",
+    "tsx"
+  ],
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
@@ -288,6 +291,7 @@
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^3.2.2",
+    "jsdom": "^28.1.0",
     "typescript": "^5.7.3"
   },
   "overrides": {
