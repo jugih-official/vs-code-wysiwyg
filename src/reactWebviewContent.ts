@@ -1202,7 +1202,8 @@ body {
     function convertJsxToHtml(jsx) {
         // Convert JSX style={{...}} to HTML style="..."
         var result = jsx.replace(/style=\\{\\{([^}]*)\\}\\}/g, function(match, inner) {
-            var css = inner.replace(/(\\w+)\\s*:\\s*"([^"]*)"/g, '$1:$2')
+            var css = inner.replace(/zIndex\\s*:\\s*(\\d+)/g, 'z-index:$1')
+                           .replace(/(\\w+)\\s*:\\s*"([^"]*)"/g, '$1:$2')
                            .replace(/(\\w+)\\s*:\\s*(\\d+)/g, '$1:$2px')
                            .replace(/,/g, ';');
             return 'style="' + css + '"';
