@@ -684,8 +684,6 @@ body {
     var splitterStartX = 0;
     var splitterStartWidth = 0;
     var autoSyncTimer = null;
-    var pendingSyncAck = 0;
-    var lastSyncedContent = '';
     var zoomLevel = 1;
     var isPanning = false;
     var panStartX = 0;
@@ -1288,6 +1286,7 @@ body {
         var yVal = extractStyleNum(style, 'top');
         var wVal = extractStyleNum(style, 'width');
         var hVal = extractStyleNum(style, 'height');
+        var zVal = extractStyleNum(style, 'z-index');
 
         // Extract direct text content (not from child elements)
         var innerText = '';
@@ -1310,7 +1309,7 @@ body {
             name: el.getAttribute('id') || '',
             content: innerText || def.content,
             properties: {},
-            zIndex: nextId,
+            zIndex: zVal !== null ? zVal : nextId,
             children: [],
             parentId: parentCtrl ? parentCtrl.id : null
         };
@@ -1386,7 +1385,7 @@ body {
         if (ctrl.name) line += ' id="' + escHtml(ctrl.name) + '"';
 
         // JSX style attribute for positioning (object syntax)
-        line += ' style={{position:"absolute",left:' + Math.round(ctrl.x) + ',top:' + Math.round(ctrl.y) + ',width:' + Math.round(ctrl.w) + ',height:' + Math.round(ctrl.h) + '}}';
+        line += ' style={{position:"absolute",left:' + Math.round(ctrl.x) + ',top:' + Math.round(ctrl.y) + ',width:' + Math.round(ctrl.w) + ',height:' + Math.round(ctrl.h) + ',zIndex:' + (ctrl.zIndex || 1) + '}}';
 
         // Extra properties — convert HTML attrs to JSX equivalents
         var props = ctrl.properties || {};
@@ -2181,8 +2180,6 @@ body {
 
     window.syncToReact = function() {
         var reactOutput = generateReactOutput();
-        lastSyncedContent = reactOutput;
-        pendingSyncAck++;
         vscode.postMessage({ type: 'updateReact', content: reactOutput });
     };
 
@@ -2234,7 +2231,7 @@ body {
         var message = event.data;
         switch (message.type) {
             case 'highlightElement': {
-                if (isDraggingControl || isResizing || isDraggingNew || autoSyncTimer || pendingSyncAck > 0) break;
+                if (isDraggingControl || isResizing || isDraggingNew || autoSyncTimer) break;
                 var elemType = message.elementType || '';
                 var elemName = message.elementName || '';
                 var occIdx = typeof message.occurrenceIndex === 'number' ? message.occurrenceIndex : -1;
@@ -2258,19 +2255,8 @@ body {
                 }
                 break;
             }
-            case 'syncAck': {
-                if (pendingSyncAck > 0) pendingSyncAck--;
-                break;
-            }
             case 'documentUpdate': {
                 if (isDraggingControl || isResizing || isDraggingNew || autoSyncTimer) break;
-                if (pendingSyncAck > 0) break;
-                // Skip re-parse when the content matches what we last synced —
-                // this is our own edit echoing back and controls are already correct.
-                if (lastSyncedContent && message.content === lastSyncedContent) {
-                    if (!documentLoaded) { documentLoaded = true; }
-                    break;
-                }
                 var parsed = parseReactContent(message.content);
                 if (parsed) {
                     var prevSelectedId = selectedId;

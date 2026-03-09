@@ -99,7 +99,6 @@ export class ReactDesignerProvider implements vscode.CustomTextEditorProvider {
                         await this.updateDocument(document, message.content || '');
                     } finally {
                         isInternalEdit = false;
-                        webviewPanel.webview.postMessage({ type: 'syncAck' });
                     }
                     break;
                 case 'selectElement': {
