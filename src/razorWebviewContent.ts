@@ -1062,6 +1062,7 @@ body {
         var yVal = extractStyleNum(style, 'top');
         var wVal = extractStyleNum(style, 'width');
         var hVal = extractStyleNum(style, 'height');
+        var zVal = extractStyleNum(style, 'z-index');
 
         var ctrl = {
             id: nextId++,
@@ -1073,7 +1074,7 @@ body {
             name: attrs['id'] || '',
             content: innerText || def.content,
             properties: {},
-            zIndex: nextId,
+            zIndex: zVal !== null ? zVal : nextId,
             children: [],
             parentId: null
         };
@@ -1142,7 +1143,7 @@ body {
         if (ctrl.name) line += ' id="' + escHtml(ctrl.name) + '"';
 
         // Style attribute for positioning
-        line += ' style="position:absolute;left:' + Math.round(ctrl.x) + 'px;top:' + Math.round(ctrl.y) + 'px;width:' + Math.round(ctrl.w) + 'px;height:' + Math.round(ctrl.h) + 'px;"';
+        line += ' style="position:absolute;left:' + Math.round(ctrl.x) + 'px;top:' + Math.round(ctrl.y) + 'px;width:' + Math.round(ctrl.w) + 'px;height:' + Math.round(ctrl.h) + 'px;z-index:' + (ctrl.zIndex || 1) + ';"';
 
         // Extra properties
         var props = ctrl.properties || {};
