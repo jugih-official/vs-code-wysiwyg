@@ -1158,7 +1158,7 @@ body {
                 isFragment = false;
                 var beforeReturn = trimmed.substring(0, rMatch.index);
                 var afterParen = trimmed.substring(closeIdx + 1);
-                // Strip the trailing ';\n}' (or similar) that closes the return
+                // Strip the trailing semicolon and closing brace that ends the return
                 // statement and the enclosing function body so that jsxSuffix
                 // only contains code that follows the function.
                 var trailingMatch = afterParen.match(/^\\s*;?\\s*\\}/);
@@ -1204,7 +1204,9 @@ body {
         var result = jsx.replace(/style=\\{\\{([^}]*)\\}\\}/g, function(match, inner) {
             var css = inner.replace(/zIndex\\s*:\\s*(\\d+)/g, 'z-index:$1')
                            .replace(/(\\w+)\\s*:\\s*"([^"]*)"/g, '$1:$2')
-                           .replace(/(\\w+)\\s*:\\s*(\\d+)/g, '$1:$2px')
+                           .replace(/([\\w-]+)\\s*:\\s*(\\d+)/g, function(m, prop, val) {
+                               return prop === 'z-index' ? prop + ':' + val : prop + ':' + val + 'px';
+                           })
                            .replace(/,/g, ';');
             return 'style="' + css + '"';
         });
