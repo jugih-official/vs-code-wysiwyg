@@ -1,6 +1,25 @@
 import * as vscode from 'vscode';
 import { XamlDocument } from './xamlDocument';
 import { getWebviewContent } from './webviewContent';
+import { getWpfDesignerHtml } from './wpfDesignerHtml';
+import { collectImages, findProjectRoot } from './wpfImages';
+import * as path from 'path';
+
+interface WpfMessage {
+    type: string;
+    version?: number;
+    edits?: { offset: number; length: number; text: string }[];
+    offset?: number;
+    end?: number;
+    focus?: boolean;
+}
+
+/** WPF XAML (as opposed to Avalonia, UWP or MAUI): the root uses the WPF presentation namespace. */
+export function isWpfXaml(text: string): boolean {
+    const head = text.substring(0, 4000);
+    return /xmlns\s*=\s*"http:\/\/schemas\.microsoft\.com\/winfx\/2006\/xaml\/presentation"/.test(head)
+        && !/xmlns\s*=\s*"https:\/\/github\.com\/avaloniaui"/.test(head);
+}
 
 export class XamlDesignerProvider implements vscode.CustomTextEditorProvider {
     constructor(private readonly context: vscode.ExtensionContext) {}
@@ -10,6 +29,10 @@ export class XamlDesignerProvider implements vscode.CustomTextEditorProvider {
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken
     ): Promise<void> {
+        if (isWpfXaml(document.getText())) {
+            this.resolveWpfEditor(document, webviewPanel);
+            return;
+        }
         webviewPanel.webview.options = {
             enableScripts: true,
         };
@@ -132,6 +155,124 @@ export class XamlDesignerProvider implements vscode.CustomTextEditorProvider {
                     }
                     break;
                 }
+            }
+        });
+    }
+
+    /**
+     * WPF files: the webview renders the XAML with WPF layout rules and sends back minimal text edits
+     * (offset, length, text), so everything the designer does not touch stays byte for byte as it was.
+     */
+    private resolveWpfEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel): void {
+        const xamlPath = document.uri.fsPath;
+        const projectRoot = findProjectRoot(xamlPath);
+        const roots = [vscode.Uri.joinPath(this.context.extensionUri, 'media'), vscode.Uri.file(projectRoot), vscode.Uri.file(path.dirname(xamlPath))];
+        (vscode.workspace.workspaceFolders || []).forEach(f => roots.push(f.uri));
+        webviewPanel.webview.options = { enableScripts: true, localResourceRoots: roots };
+        webviewPanel.webview.html = getWpfDesignerHtml(webviewPanel.webview, this.context);
+
+        let revealing = false;
+        const sendDocument = () => {
+            const text = document.getText();
+            webviewPanel.webview.postMessage({
+                type: 'document',
+                text,
+                version: document.version,
+                images: collectImages(text, xamlPath, webviewPanel.webview),
+            });
+        };
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const scheduleSend = (delay: number) => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+            timer = setTimeout(() => {
+                timer = undefined;
+                sendDocument();
+            }, delay);
+        };
+
+        const textEditors = () => vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() === document.uri.toString());
+
+        const subscriptions = [
+            vscode.workspace.onDidChangeTextDocument(e => {
+                if (e.document.uri.toString() === document.uri.toString() && e.contentChanges.length) {
+                    scheduleSend(e.reason === undefined ? 150 : 0);
+                }
+            }),
+            vscode.window.onDidChangeTextEditorSelection(e => {
+                if (revealing || e.textEditor.document.uri.toString() !== document.uri.toString() || !webviewPanel.visible) {
+                    return;
+                }
+                if (e.kind === vscode.TextEditorSelectionChangeKind.Command) {
+                    return;
+                }
+                webviewPanel.webview.postMessage({ type: 'cursor', offset: document.offsetAt(e.selections[0].active) });
+            }),
+        ];
+        webviewPanel.onDidDispose(() => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+            subscriptions.forEach(s => s.dispose());
+        });
+
+        webviewPanel.webview.onDidReceiveMessage(async (message: WpfMessage) => {
+            switch (message.type) {
+                case 'ready':
+                    sendDocument();
+                    break;
+                case 'edit': {
+                    if (message.version !== document.version) {
+                        webviewPanel.webview.postMessage({ type: 'editRejected' });
+                        sendDocument();
+                        break;
+                    }
+                    const edit = new vscode.WorkspaceEdit();
+                    for (const e of message.edits || []) {
+                        edit.replace(document.uri, new vscode.Range(document.positionAt(e.offset), document.positionAt(e.offset + e.length)), e.text);
+                    }
+                    const ok = await vscode.workspace.applyEdit(edit);
+                    if (!ok) {
+                        webviewPanel.webview.postMessage({ type: 'editRejected' });
+                    }
+                    if (timer) {
+                        clearTimeout(timer);
+                        timer = undefined;
+                    }
+                    sendDocument();
+                    break;
+                }
+                case 'reveal': {
+                    const start = document.positionAt(message.offset || 0);
+                    const end = document.positionAt(message.end ?? message.offset ?? 0);
+                    let editors = textEditors();
+                    if (!editors.length && message.focus) {
+                        await vscode.window.showTextDocument(document, { viewColumn: vscode.ViewColumn.Beside, preserveFocus: false });
+                        editors = textEditors();
+                    }
+                    revealing = true;
+                    try {
+                        for (const ed of editors) {
+                            ed.selection = new vscode.Selection(start, end);
+                            ed.revealRange(new vscode.Range(start, end), vscode.TextEditorRevealType.InCenterIfOutsideViewport);
+                        }
+                        if (message.focus && editors[0]) {
+                            await vscode.window.showTextDocument(editors[0].document, { viewColumn: editors[0].viewColumn, preserveFocus: false });
+                        }
+                    } finally {
+                        setTimeout(() => { revealing = false; }, 50);
+                    }
+                    break;
+                }
+                case 'openSource':
+                    await vscode.window.showTextDocument(document, { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true });
+                    break;
+                case 'undo':
+                case 'redo':
+                    webviewPanel.reveal(undefined, false);
+                    await vscode.commands.executeCommand(message.type);
+                    break;
             }
         });
     }

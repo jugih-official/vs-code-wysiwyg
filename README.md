@@ -50,31 +50,32 @@ See the LICENSE file for full terms.
    - [Zoom & Pan](#zoom--pan)
    - [Bidirectional Cursor Sync](#bidirectional-cursor-sync)
    - [Syncing Changes to Source](#syncing-changes-to-source)
-7. [XAML / AXAML Designer](#xaml--axaml-designer)
+7. [WPF Designer](#wpf-designer)
+8. [XAML / AXAML Designer](#xaml--axaml-designer)
    - [Available Controls](#xaml-available-controls)
    - [Control Nesting](#control-nesting)
    - [Properties Panel — XAML](#properties-panel--xaml)
-8. [Razor Designer](#razor-designer)
+9. [Razor Designer](#razor-designer)
    - [Available Elements](#razor-available-elements)
    - [Properties Panel — Razor](#properties-panel--razor)
-9. [HTML Designer](#html-designer)
+10. [HTML Designer](#html-designer)
    - [Available Elements](#html-available-elements)
    - [Properties Panel — HTML](#properties-panel--html)
-10. [Vue Designer](#vue-designer)
+11. [Vue Designer](#vue-designer)
     - [Available Elements](#vue-available-elements)
     - [Properties Panel — Vue](#properties-panel--vue)
-11. [React Designer](#react-designer)
+12. [React Designer](#react-designer)
     - [Available Elements](#react-available-elements)
     - [Properties Panel — React](#properties-panel--react)
-12. [Live Preview](#live-preview)
+13. [Live Preview](#live-preview)
     - [HTML Preview](#html-preview)
     - [XAML / AXAML Preview](#xaml--axaml-preview)
     - [Razor Preview](#razor-preview)
-13. [Keyboard Shortcuts](#keyboard-shortcuts)
-14. [Toolbar Reference](#toolbar-reference)
-15. [Context Menu Reference](#context-menu-reference)
-16. [Development Guide](#development-guide)
-17. [Project Structure](#project-structure)
+14. [Keyboard Shortcuts](#keyboard-shortcuts)
+15. [Toolbar Reference](#toolbar-reference)
+16. [Context Menu Reference](#context-menu-reference)
+17. [Development Guide](#development-guide)
+18. [Project Structure](#project-structure)
 
 ---
 
@@ -319,9 +320,29 @@ The extension also listens for external file changes: if the `.xaml`, `.razor`, 
 
 ---
 
+## WPF Designer
+
+A `.xaml` file whose root uses the WPF namespace (`http://schemas.microsoft.com/winfx/2006/xaml/presentation`) opens in the **WPF designer**. It draws the window the way WPF lays it out, so proportions and positions match the running application, and it edits the file in place without rewriting it.
+
+**Rendering**
+- WPF layout: `Canvas`, `Grid` (rows, columns, spans), `StackPanel`, `WrapPanel`, `DockPanel`, `UniformGrid`, `Border`, `Viewbox` (scaled like the running window) and the window frame (client area = `Width − 16` × `Height − 39`).
+- The WPF value system: local attributes, `<X.Style>` and `Style="{StaticResource …}"` styles (with `BasedOn`), implicit styles by type, style triggers, resources and `SystemColors`.
+- Design-time bindings behave as in the Visual Studio designer: a binding to another named element is evaluated, and every other binding shows its `FallbackValue`.
+- Aero2 (Windows 10/11) looks for Button, TextBox, ProgressBar, CheckBox, ComboBox, Menu, StatusBar and TabControl, including custom `TabItem` and `MenuItem` templates. It also applies `#AARRGGBB` colours, transforms, blur and drop-shadow effects, and fonts with WPF line spacing (Selawik and Carlito stand in for Segoe UI and Calibri where those are not installed).
+- Images resolve from the project root (the folder with the `.csproj`), so `/Resources/Images/x.png` works, and are sized in WPF units from their DPI.
+
+**Editing**
+- Every change is a minimal text edit, applied through VS Code: comments, formatting, styles and triggers you do not touch stay exactly as they are. Undo and redo use the normal editor history.
+- Drag to move: this changes `Canvas.Left`/`Canvas.Top` in a Canvas, or `Margin` elsewhere, respecting the alignment. Handles resize by changing `Width`/`Height`. Arrow keys nudge (Shift for 10).
+- The properties panel shows local values in bold, values from a style in yellow, and inherited or default values as placeholders. It edits any attribute and can add new ones.
+- The Outline tree and its search find any element, including hidden ones. **Outlines** frames every element and shows hidden and unfilled ones, so they can be picked on the canvas.
+- Click a tab header to show that tab. Ctrl+click steps through the elements stacked under the pointer; Alt+click selects the parent; Esc selects the parent.
+- Toolbox: drag a control onto a Canvas, Grid, StackPanel or empty Border. Ctrl+D duplicates the selection (names get `_Copy`); Delete removes it.
+- Selecting in the designer selects the element's start tag in an open text editor, and moving the cursor in the text selects the element. Double-click an element to open its source.
+
 ## XAML / AXAML Designer
 
-The XAML designer generates **Avalonia UI**-compatible XAML markup.  
+Avalonia (`.axaml`, or `.xaml` without the WPF namespace) opens in this designer. It generates **Avalonia UI**-compatible XAML markup.  
 All control coordinates are expressed as `Canvas.Left` / `Canvas.Top` absolute positions with explicit `Width` and `Height` attributes.
 
 ### XAML Available Controls
@@ -800,7 +821,15 @@ vs-code-wysiwyg/
 │   ├── razorWebviewContent.ts    # Webview HTML + embedded JS for the Razor designer
 │   ├── htmlWebviewContent.ts     # Webview HTML + embedded JS for the HTML designer
 │   ├── vueWebviewContent.ts      # Webview HTML + embedded JS for the Vue designer
-│   └── reactWebviewContent.ts    # Webview HTML + embedded JS for the React designer
+│   ├── reactWebviewContent.ts    # Webview HTML + embedded JS for the React designer
+│   ├── wpfDesignerHtml.ts        # Webview page for the WPF designer
+│   └── wpfImages.ts              # Image path resolution and DPI-aware sizes for the WPF designer
+├── media/wpf/
+│   ├── wpfCore.js                # XAML parser with source offsets, WPF styles/triggers/bindings, WPF→HTML renderer, text edits
+│   ├── wpfDesigner.js            # WPF designer UI: selection, move/resize, properties, outline, toolbox
+│   ├── wpfRender.css             # WPF (Aero2) look in CSS
+│   ├── wpfDesigner.css           # Designer chrome, follows the VS Code theme
+│   └── fonts/                    # Selawik and Carlito (SIL OFL) as Segoe UI / Calibri stand-ins
 ├── out/                          # Compiled JavaScript output (generated by tsc)
 ├── package.json                  # Extension manifest, scripts, and dependencies
 ├── tsconfig.json                 # TypeScript compiler configuration

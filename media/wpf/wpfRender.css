@@ -1,0 +1,105 @@
+/* How WPF draws, in CSS. Values follow the WPF Aero2 theme (Windows 10/11); they are the ones the
+   distribution_system Blazor renderer measured against real WPF (wpf.css there). */
+
+.wpf-root {
+    position: relative;
+    font-family: 'Segoe UI', 'Selawik', 'Segoe UI Symbol', 'Noto Sans Symbols2', 'Noto Sans', 'DejaVu Sans', sans-serif;
+    font-variant-emoji: text;
+    font-size: 12px; line-height: 1.330078125; color: #000000;
+    -webkit-user-select: none; user-select: none;
+    -webkit-font-smoothing: antialiased;
+    text-align: left;
+}
+.wpf-root img { -webkit-user-drag: none; }
+.wpf-root * { box-sizing: border-box; }
+
+/* ---------- window chrome (Windows 10/11 frame; the client area is Width-16 × Height-39) ---------- */
+.x-window { background: #FFFFFF; border: 1px solid #7A7A7A; box-shadow: 0 8px 30px rgba(0,0,0,.45); display: flex; flex-direction: column; width: max-content; }
+.x-window-caption { height: 30px; flex: none; display: flex; align-items: center; background: #FFFFFF; color: #000000; padding-left: 10px; font-size: 12px; }
+.x-window-title { flex: 1; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+.x-window-buttons { display: flex; }
+.x-window-buttons span { width: 46px; height: 30px; display: grid; place-items: center; font-size: 11px; }
+.x-window-client { flex: none; }
+
+/* ---------- generic elements ---------- */
+.x-image { display: block; }
+.x-shape { display: block; }
+.x-label { color: #000000; background-clip: padding-box; }
+.x-label > span { white-space: pre; }
+.x-presenter { display: grid; grid-template: minmax(0,1fr)/minmax(0,1fr); }
+.x-border { background-clip: padding-box; }
+.x-hover-border { border-style: solid; border-color: var(--xb-n); border-width: var(--xw-n); }
+.x-hover-border:hover { border-color: var(--xb-h); border-width: var(--xw-h); }
+
+/* Button (Aero2): #FFDDDDDD, 1px #FF707070, content centred with Padding 1. */
+.x-button {
+    display: flex; margin: 0; padding: 1px; color: #000000;
+    background: var(--x-bg, #DDDDDD); border: 1px solid var(--x-bd, #707070); cursor: default; outline: none;
+}
+.x-button > span { white-space: pre; }
+.x-button.x-disabled { background: #F4F4F4; border-color: #ADB2B5; color: #838383; }
+
+/* TextBox (Aero2): white, 1px #FFABADB3. */
+.x-textbox { margin: 0; padding: 0 2px; color: #000000; background: #FFFFFF; border: 1px solid #ABADB3; overflow: hidden; }
+
+/* ProgressBar (Aero2): track #FFE6E6E6 with 1px #FFBCBCBC border, indicator #FF06B025. */
+.x-progress { position: relative; border: 1px solid #BCBCBC; background: #E6E6E6; }
+.x-progress-indicator { position: absolute; left: -1px; top: -1px; bottom: -1px; background: #06B025; }
+
+/* CheckBox / RadioButton (Aero2) */
+.x-check-box { flex: none; width: 13px; height: 13px; border: 1px solid #333333; background: #FFFFFF; display: grid; place-items: center; font-size: 10px; line-height: 1; }
+.x-check-box.x-radio { border-radius: 50%; }
+.x-radio-dot { width: 7px; height: 7px; border-radius: 50%; background: #212121; }
+
+/* ComboBox (Aero2) */
+.x-combo { display: flex; align-items: center; border: 1px solid #ACACAC; background: linear-gradient(#F0F0F0, #E5E5E5); padding: 3px 4px; }
+.x-combo-text { flex: 1; white-space: pre; overflow: hidden; }
+.x-combo-arrow { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 4px solid #606060; margin: 0 3px; }
+
+/* ListBox / ItemsControl */
+.x-list { display: flex; flex-direction: column; border: 1px solid #ABADB3; background: #FFFFFF; overflow: hidden; padding: 1px; }
+.x-list.x-itemscontrol { border: 0; background: transparent; }
+.x-list-item { padding: 0 4px; white-space: pre; }
+
+/* Slider */
+.x-slider { position: relative; min-height: 18px; }
+.x-slider-track { position: absolute; left: 5px; right: 5px; top: 50%; height: 4px; margin-top: -2px; background: #E7EAEA; border: 1px solid #D6D6D6; }
+.x-slider-thumb { position: absolute; top: 50%; width: 11px; height: 18px; margin-top: -9px; background: #F0F0F0; border: 1px solid #ACACAC; }
+
+/* DataGrid (Aero2 look, columns are known only at run time) */
+.x-datagrid { border: 1px solid #688CAF; background: #FFFFFF; overflow: hidden; }
+.x-datagrid-header { display: flex; background: #FFFFFF; border-bottom: 1px solid #D5D5D5; }
+.x-datagrid-header > span { padding: 2px 5px; border-right: 1px solid #D5D5D5; white-space: pre; }
+.x-datagrid-note { color: #6D6D6D; font-style: italic; border-right: 0 !important; }
+
+.x-unknown { border: 1px dashed #9A9A9A; background: rgba(154,154,154,.08); }
+.x-unknown-label { align-self: center; justify-self: center; color: #6D6D6D; font-size: 11px; white-space: pre; }
+
+/* ---------- Menu, StatusBar, TabControl ---------- */
+.x-menu { display: flex; flex-wrap: wrap; align-items: stretch; color: #212121; }
+.x-menuitem { display: grid; }
+.x-menuitem-presenter { display: grid; grid-template: minmax(0,1fr)/minmax(0,1fr); }
+.x-menuitem-text { white-space: pre; }
+
+.x-statusbar { justify-content: start; color: #000000; }
+.x-statusbaritem { display: grid; padding: 3px; align-items: center; }
+.x-statusbar-separator { width: 1px; margin: 2px; background: #696969; }
+
+/* TabControl (Aero2): header panel Margin 2,2,2,0; content Border 1px #FFACACAC, white, Padding 2. */
+.x-tabcontrol { display: flex; flex-direction: column; }
+.x-tabpanel { display: flex; flex-wrap: wrap; margin: 2px 2px 0 2px; position: relative; z-index: 1; }
+.x-tabitem { display: grid; cursor: default; color: #000000; }
+.x-tabitem-border { display: grid; overflow: hidden; }
+.x-tabitem-content { white-space: pre; display: grid; grid-template: minmax(0,1fr)/minmax(0,1fr); min-width: 0; min-height: 0; }
+.x-tabitem-content > span { align-self: var(--x-pv, center); justify-self: var(--x-ph, center); }
+.x-tabcontent { border: 1px solid #ACACAC; background: #FFFFFF; padding: 2px; }
+.x-tabcontent-presenter { display: grid; grid-template: minmax(0,1fr)/minmax(0,1fr); }
+
+/* Fallback fonts, used only when Segoe UI / Calibri are not installed (Linux, macOS). */
+@font-face { font-family: 'Selawik'; font-weight: 300; src: url('fonts/selawkl.woff2') format('woff2'); }
+@font-face { font-family: 'Selawik'; font-weight: 350; src: url('fonts/selawksl.woff2') format('woff2'); }
+@font-face { font-family: 'Selawik'; font-weight: 400; src: url('fonts/selawk.woff2') format('woff2'); }
+@font-face { font-family: 'Selawik'; font-weight: 600; src: url('fonts/selawksb.woff2') format('woff2'); }
+@font-face { font-family: 'Selawik'; font-weight: 700; src: url('fonts/selawkb.woff2') format('woff2'); }
+@font-face { font-family: 'Carlito'; font-weight: 400; src: url('fonts/Carlito-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Carlito'; font-weight: 700; src: url('fonts/Carlito-Bold.ttf') format('truetype'); }
