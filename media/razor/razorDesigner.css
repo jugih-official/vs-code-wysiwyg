@@ -1,0 +1,39 @@
+/* Razor designer additions to the shared designer chrome (media/wpf/wpfDesigner.css). */
+.side.left { width: 270px; }
+.side.right { width: 320px; }
+.toolbar select, .vp-input {
+    font: inherit; color: var(--vscode-input-foreground, #ccc); background: var(--vscode-input-background, #3c3c3c);
+    border: 1px solid var(--vscode-input-border, #555); border-radius: 3px; padding: 2px 4px;
+}
+.vp-input { width: 64px; }
+.vp-input[hidden] { display: none; }
+
+.rz-frame { position: absolute; left: 0; top: 0; border: 0; background: #fff; transform-origin: 0 0; box-shadow: 0 6px 24px rgba(0,0,0,.45); }
+.glass { position: absolute; left: 0; top: 0; }
+.drop-line { position: absolute; display: none; background: #32c832; pointer-events: none; }
+.drop-line.inside { background: rgba(50,200,50,.10); outline: 2px dashed #32c832; }
+
+.state-pane { flex: 1; overflow: auto; padding: 6px 0 20px; }
+.state-row { display: flex; align-items: center; gap: 6px; padding: 3px 10px; }
+.state-row label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--vscode-editor-font-family, monospace); }
+.state-row input[type=number] { width: 54px; }
+.state-row select, .state-row input[type=number] { font: inherit; color: var(--vscode-input-foreground, #ccc); background: var(--vscode-input-background, #3c3c3c); border: 1px solid var(--vscode-input-border, #555); border-radius: 3px; }
+.state-head { padding: 8px 10px 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; opacity: .65; }
+
+.tree-block { color: var(--vscode-symbolIcon-keywordForeground, #c586c0); }
+.tree-comp { color: var(--vscode-symbolIcon-classForeground, #ee9d28); }
+.tree-expr { color: var(--vscode-symbolIcon-variableForeground, #75beff); }
+.tree-cls { margin-left: 5px; opacity: .6; }
+
+.rule { margin: 4px 8px 8px; border: 1px solid var(--vscode-panel-border, #3c3c3c); border-radius: 4px; }
+.rule-head { display: flex; gap: 6px; padding: 4px 6px; background: rgba(128,128,128,.08); cursor: pointer; }
+.rule-head .sel { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--vscode-editor-font-family, monospace); }
+.rule-head .src { opacity: .6; white-space: nowrap; }
+.rule.inactive { opacity: .5; }
+.rule .prop-row { grid-template-columns: 110px 1fr; }
+.rule .prop-row label { font-family: var(--vscode-editor-font-family, monospace); }
+.overridden input { text-decoration: line-through; }
+.readonly-note { padding: 8px 10px; opacity: .8; line-height: 1.4; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 10px 4px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border-radius: 10px; background: rgba(0,122,204,.2); font-family: var(--vscode-editor-font-family, monospace); }
+.chip button { background: none; border: 0; color: inherit; cursor: pointer; padding: 0; opacity: .7; }

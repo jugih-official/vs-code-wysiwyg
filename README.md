@@ -56,8 +56,6 @@ See the LICENSE file for full terms.
    - [Control Nesting](#control-nesting)
    - [Properties Panel — XAML](#properties-panel--xaml)
 9. [Razor Designer](#razor-designer)
-   - [Available Elements](#razor-available-elements)
-   - [Properties Panel — Razor](#properties-panel--razor)
 10. [HTML Designer](#html-designer)
    - [Available Elements](#html-available-elements)
    - [Properties Panel — HTML](#properties-panel--html)
@@ -481,64 +479,22 @@ When a XAML control is selected, the following fields are available in the Prope
 
 ## Razor Designer
 
-The Razor designer generates Blazor-compatible Razor markup (`.razor`).  
-It supports both standard HTML elements and Blazor-specific components in a single canvas.
+`.razor` files open in a designer that draws the component the way the running Blazor app does, and edits the file in place without rewriting it.
 
-### Razor Available Elements
+**Rendering**
+- The page is drawn in an isolated frame with the project's own stylesheets: the `<link rel="stylesheet">` tags of `App.razor` (or `wwwroot/index.html`, `_Host.cshtml`, `_Layout.cshtml`), including `@Assets["…"]` links. CSS isolation works too: every `X.razor.css` is scoped to its component the way Blazor builds `{Project}.styles.css`, including `::deep`.
+- Child components are drawn from their own `.razor` files, with the parameters you pass (`ChildContent` included). Pages are shown inside their layout (`@layout` or the router's `DefaultLayout`); this can be turned off. Built-in components map to HTML (`EditForm`, `Input*`, `NavLink`); components from other libraries show as labelled boxes.
+- Razor code runs at design time as far as it can: literals, parameters and simple fields are evaluated. Every condition that needs the running app (`@if`, `?:`, `switch`) becomes a toggle on the **State** tab, shared across components, so you can see each state (for example `Modern` on and off). Loops repeat their body a set number of times, and other `@expressions` show as named placeholders.
+- Viewport presets (1920×1080 down to phone size) or a custom size; zoom and pan.
 
-#### HTML Structure
-
-`div`, `span`, `p`, `h1`–`h6`, `a`, `hr`, `br`, `blockquote`, `pre`, `code`
-
-#### HTML Forms
-
-`input`, `textarea`, `select`, `button`, `label`, `form`, `fieldset`
-
-#### HTML Lists & Tables
-
-`ul`, `ol`, `li`, `table`, `tr`, `th`, `td`
-
-#### HTML Semantic / Layout
-
-`nav`, `header`, `footer`, `section`, `article`, `aside`, `main`
-
-#### Blazor Components
-
-| Component | Description |
-|-----------|-------------|
-| `EditForm` | Form bound to a model with validation |
-| `InputText` | `<input type="text">` bound with `@bind` |
-| `InputNumber` | `<input type="number">` |
-| `InputDate` | `<input type="date">` |
-| `InputSelect` | `<select>` bound to a model property |
-| `InputCheckbox` | `<input type="checkbox">` |
-| `InputTextArea` | `<textarea>` |
-| `InputFile` | File-upload input |
-| `InputRadio` | Single radio button |
-| `InputRadioGroup` | Group of radio buttons |
-| `ValidationSummary` | Shows all validation messages |
-| `ValidationMessage` | Shows validation message for a single field |
-| `AuthorizeView` | Shows content based on authorisation state |
-| `CascadingValue` | Provides a cascading parameter down the tree |
-| `Virtualize` | Efficient rendering of large lists |
-| `HeadContent` | Injects content into `<head>` |
-| `ErrorBoundary` | Catches render errors in child content |
-
-> **Note:** `<PageTitle>` elements are preserved as-is in Razor files and are not shown as editable controls in the designer. This prevents the page title from being corrupted during editing.
-
-### Properties Panel — Razor
-
-| Property | Attribute | Description |
-|----------|-----------|-------------|
-| id | `id` | Element identifier |
-| class | `class` | CSS class(es) |
-| X | `style: left` | Horizontal position |
-| Y | `style: top` | Vertical position |
-| Width | `style: width` | Element width |
-| Height | `style: height` | Element height |
-| @onclick | `@onclick` | Blazor click event handler |
-| disabled | `disabled` | Disabled state |
-| Custom attributes | Any | Blazor binding directives (`@bind`, etc.) |
+**Editing**
+- Every change is a minimal text edit, applied through VS Code: code, comments and formatting you do not touch stay exactly as they are. Undo and redo use the normal editor history.
+- Drag an element to reorder it: the middle of a target puts it inside, the edges before or after. Alt+↑/↓ also move it among its siblings. Absolutely positioned elements move by `left`/`top`; handles resize by writing `width`/`height` to the inline style.
+- The properties panel edits text, classes (add or remove), inline style properties (the computed value is shown as a hint), attributes, event and binding directives, component parameters (the declared `[Parameter]`s are listed), and `@if`/`@foreach` conditions.
+- **CSS rules**: the panel lists the rules that apply to the selected element, with file and line, from the project's stylesheets and the component's `.razor.css`. Editing a value, or adding a declaration, changes that CSS file (and saves it).
+- The Outline tree shows elements, components, `@if`/`@foreach` blocks and expressions. Click selects an element of the file; Shift+click reaches inside child components; Ctrl+click steps through what is under the pointer (expressions included); Alt+click or Esc selects the parent. Double-click opens the source, or the child component's file.
+- Toolbox: drag HTML elements onto the page. Ctrl+D duplicates the selection; Delete removes it.
+- Selecting in the designer selects the tag in an open text editor, and moving the cursor in the text selects the element.
 
 ---
 
@@ -818,12 +774,17 @@ vs-code-wysiwyg/
 │   ├── previewProvider.ts        # Unified preview provider for XAML/AXAML, Razor, and HTML files
 │   ├── xamlDocument.ts           # XAML document model / parser helpers
 │   ├── webviewContent.ts         # Webview HTML + embedded JS for the XAML designer
-│   ├── razorWebviewContent.ts    # Webview HTML + embedded JS for the Razor designer
 │   ├── htmlWebviewContent.ts     # Webview HTML + embedded JS for the HTML designer
 │   ├── vueWebviewContent.ts      # Webview HTML + embedded JS for the Vue designer
 │   ├── reactWebviewContent.ts    # Webview HTML + embedded JS for the React designer
+│   ├── razorDesignerHtml.ts      # Webview page for the Razor designer
+│   ├── razorProject.ts           # Finds a Blazor project's components, .razor.css files, stylesheets and layout
 │   ├── wpfDesignerHtml.ts        # Webview page for the WPF designer
 │   └── wpfImages.ts              # Image path resolution and DPI-aware sizes for the WPF designer
+├── media/razor/
+│   ├── razorCore.js              # Razor parser with source offsets, design-time C# evaluation, renderer, CSS isolation and rule parsing, text edits
+│   ├── razorDesigner.js          # Razor designer UI: preview frame, selection, reorder/resize, properties and CSS rules, state, toolbox
+│   └── razorDesigner.css         # Razor designer additions to the shared chrome
 ├── media/wpf/
 │   ├── wpfCore.js                # XAML parser with source offsets, WPF styles/triggers/bindings, WPF→HTML renderer, text edits
 │   ├── wpfDesigner.js            # WPF designer UI: selection, move/resize, properties, outline, toolbox

@@ -1,6 +1,30 @@
 import * as vscode from 'vscode';
-import { getRazorWebviewContent } from './razorWebviewContent';
+import * as path from 'path';
+import { getRazorDesignerHtml } from './razorDesignerHtml';
+import { collectRazorProject } from './razorProject';
 
+interface TextEditMessage {
+    offset: number;
+    length: number;
+    text: string;
+    /** For edits of other files: the text the edit replaces, checked before applying. */
+    expect?: string;
+}
+
+interface RazorMessage {
+    type: string;
+    version?: number;
+    edits?: TextEditMessage[];
+    offset?: number;
+    end?: number;
+    focus?: boolean;
+    path?: string;
+}
+
+/**
+ * Razor (Blazor) designer: the webview renders the component with the project's CSS and sends back
+ * minimal text edits (offset, length, text) for the .razor file, or for the CSS file of an edited rule.
+ */
 export class RazorDesignerProvider implements vscode.CustomTextEditorProvider {
     constructor(private readonly context: vscode.ExtensionContext) {}
 
@@ -9,140 +33,176 @@ export class RazorDesignerProvider implements vscode.CustomTextEditorProvider {
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken
     ): Promise<void> {
-        webviewPanel.webview.options = {
-            enableScripts: true,
+        const razorPath = document.uri.fsPath;
+        const webview = webviewPanel.webview;
+        let info = collectRazorProject(razorPath, webview);
+        const roots = [vscode.Uri.joinPath(this.context.extensionUri, 'media'), vscode.Uri.file(info.root), vscode.Uri.file(path.dirname(razorPath))];
+        (vscode.workspace.workspaceFolders || []).forEach(f => roots.push(f.uri));
+        webview.options = { enableScripts: true, localResourceRoots: roots };
+        webview.html = getRazorDesignerHtml(webview, this.context);
+
+        const sendProject = () => {
+            info = collectRazorProject(razorPath, webview);
+            webview.postMessage({ type: 'project', project: info, current: razorPath, text: document.getText(), version: document.version });
+        };
+        const sendDocument = () => {
+            webview.postMessage({ type: 'document', text: document.getText(), version: document.version });
         };
 
-        let isInternalEdit = false;
-
-        // Set initial content
-        webviewPanel.webview.html = getRazorWebviewContent(webviewPanel.webview, this.context);
-
-        // Send the document content to webview
-        const sendDocumentToWebview = () => {
-            const text = document.getText();
-            webviewPanel.webview.postMessage({
-                type: 'documentUpdate',
-                content: text,
-            });
-        };
-
-        // Debounce document change events to avoid excessive updates
-        let debounceTimer: ReturnType<typeof setTimeout> | undefined;
-        const debouncedSendDocument = () => {
-            if (debounceTimer) {
-                clearTimeout(debounceTimer);
+        let docTimer: ReturnType<typeof setTimeout> | undefined;
+        let projectTimer: ReturnType<typeof setTimeout> | undefined;
+        const scheduleDocument = (delay: number) => {
+            if (docTimer) {
+                clearTimeout(docTimer);
             }
-            debounceTimer = setTimeout(sendDocumentToWebview, 100);
+            docTimer = setTimeout(() => { docTimer = undefined; sendDocument(); }, delay);
         };
-
-        // Listen for text document changes (external edits)
-        const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument((e: vscode.TextDocumentChangeEvent) => {
-            if (e.document.uri.toString() === document.uri.toString() && !isInternalEdit) {
-                debouncedSendDocument();
+        const scheduleProject = () => {
+            if (projectTimer) {
+                clearTimeout(projectTimer);
             }
-        });
+            projectTimer = setTimeout(() => { projectTimer = undefined; sendProject(); }, 250);
+        };
+        const inProject = (p: string) => p.startsWith(info.root + path.sep) && /\.(razor|css|cshtml|html)$/i.test(p) && p !== razorPath;
 
-        // Listen for text editor selection changes (cursor sync: text → visual)
-        const selectionChangeSubscription = vscode.window.onDidChangeTextEditorSelection((e: vscode.TextEditorSelectionChangeEvent) => {
-            if (e.selections.length === 0) { return; }
-            if (e.textEditor.document.uri.toString() === document.uri.toString() && webviewPanel.visible) {
-                const line = e.selections[0].active.line;
-                const lineText = document.lineAt(line).text;
-                const match = lineText.match(/<(\w+)[\s/>]/);
-                if (match) {
-                    const nameMatch = lineText.match(/(?:id|class)="([^"]+)"/);
-                    const elemType = match[1];
-                    const elemName = nameMatch ? nameMatch[1] : '';
-                    // Count occurrences of same type+name before this line
-                    let occurrenceIndex = 0;
-                    for (let i = 0; i < line; i++) {
-                        const prevLine = document.lineAt(i).text;
-                        const prevMatch = prevLine.match(/<(\w+)[\s/>]/);
-                        if (prevMatch && prevMatch[1] === elemType) {
-                            const prevNameMatch = prevLine.match(/(?:id|class)="([^"]+)"/);
-                            const prevName = prevNameMatch ? prevNameMatch[1] : '';
-                            if (prevName === elemName) {
-                                occurrenceIndex++;
-                            }
-                        }
-                    }
-                    webviewPanel.webview.postMessage({
-                        type: 'highlightElement',
-                        elementType: elemType,
-                        elementName: elemName,
-                        occurrenceIndex: occurrenceIndex,
-                        line: line,
-                    });
+        let revealing = false;
+        const textEditors = () => vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() === document.uri.toString());
+
+        const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(info.root, '**/*.{razor,css,cshtml,html}'));
+        const subscriptions: vscode.Disposable[] = [
+            watcher,
+            watcher.onDidChange(u => { if (inProject(u.fsPath)) { scheduleProject(); } }),
+            watcher.onDidCreate(u => { if (inProject(u.fsPath)) { scheduleProject(); } }),
+            watcher.onDidDelete(u => { if (inProject(u.fsPath)) { scheduleProject(); } }),
+            vscode.workspace.onDidChangeTextDocument(e => {
+                if (!e.contentChanges.length) {
+                    return;
                 }
-            }
-        });
-
+                if (e.document.uri.toString() === document.uri.toString()) {
+                    scheduleDocument(e.reason === undefined ? 150 : 0);
+                } else if (inProject(e.document.uri.fsPath)) {
+                    // Unsaved changes of a child component or stylesheet show up too.
+                    scheduleProject();
+                }
+            }),
+            vscode.window.onDidChangeTextEditorSelection(e => {
+                if (revealing || e.textEditor.document.uri.toString() !== document.uri.toString() || !webviewPanel.visible) {
+                    return;
+                }
+                if (e.kind === vscode.TextEditorSelectionChangeKind.Command) {
+                    return;
+                }
+                webview.postMessage({ type: 'cursor', offset: document.offsetAt(e.selections[0].active) });
+            }),
+        ];
         webviewPanel.onDidDispose(() => {
-            if (debounceTimer) {
-                clearTimeout(debounceTimer);
-                debounceTimer = undefined;
+            if (docTimer) {
+                clearTimeout(docTimer);
             }
-            changeDocumentSubscription.dispose();
-            selectionChangeSubscription.dispose();
+            if (projectTimer) {
+                clearTimeout(projectTimer);
+            }
+            subscriptions.forEach(s => s.dispose());
         });
 
-        // Handle messages from webview
-        webviewPanel.webview.onDidReceiveMessage(async (message: { type: string; content?: string; elementType?: string; elementName?: string; occurrenceIndex?: number }) => {
+        webview.onDidReceiveMessage(async (message: RazorMessage) => {
             switch (message.type) {
                 case 'ready':
-                    sendDocumentToWebview();
+                    sendProject();
                     break;
-                case 'updateRazor':
-                    isInternalEdit = true;
-                    await this.updateDocument(document, message.content || '');
-                    isInternalEdit = false;
+                case 'edit': {
+                    if (message.version !== document.version) {
+                        webview.postMessage({ type: 'editRejected' });
+                        sendDocument();
+                        break;
+                    }
+                    const edit = new vscode.WorkspaceEdit();
+                    for (const e of message.edits || []) {
+                        edit.replace(document.uri, new vscode.Range(document.positionAt(e.offset), document.positionAt(e.offset + e.length)), e.text);
+                    }
+                    const ok = await vscode.workspace.applyEdit(edit);
+                    if (!ok) {
+                        webview.postMessage({ type: 'editRejected' });
+                    }
+                    if (docTimer) {
+                        clearTimeout(docTimer);
+                        docTimer = undefined;
+                    }
+                    sendDocument();
                     break;
-                case 'selectElement': {
-                    const text = document.getText();
-                    const lines = text.split('\n');
-                    const elemType = message.elementType || '';
-                    const elemName = message.elementName || '';
-                    const targetOccurrence = message.occurrenceIndex || 0;
-                    let matchIdx = 0;
-                    for (let i = 0; i < lines.length; i++) {
-                        const line = lines[i];
-                        if (line.indexOf('<' + elemType) >= 0) {
-                            const nameMatch = line.match(/(?:id|class)="([^"]+)"/);
-                            const lineName = nameMatch ? nameMatch[1] : '';
-                            if (lineName === elemName) {
-                                if (matchIdx === targetOccurrence) {
-                                    const range = new vscode.Range(i, 0, i, line.length);
-                                    const editors = vscode.window.visibleTextEditors.filter(
-                                        e => e.document.uri.toString() === document.uri.toString()
-                                    );
-                                    if (editors.length > 0) {
-                                        editors[0].revealRange(range, vscode.TextEditorRevealType.InCenter);
-                                        editors[0].selection = new vscode.Selection(i, 0, i, line.length);
-                                    }
-                                    break;
-                                }
-                                matchIdx++;
-                            }
+                }
+                case 'editFile': {
+                    // A CSS rule edited in the properties panel: only files of this project.
+                    const file = message.path || '';
+                    if (!file.startsWith(info.root + path.sep) || !/\.css$/i.test(file)) {
+                        break;
+                    }
+                    const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(file));
+                    const text = doc.getText();
+                    const edits = message.edits || [];
+                    if (edits.some(e => e.expect !== undefined && text.substring(e.offset, e.offset + e.length) !== e.expect)) {
+                        webview.postMessage({ type: 'editRejected', reason: path.basename(file) + ' changed meanwhile; try again' });
+                        sendProject();
+                        break;
+                    }
+                    const edit = new vscode.WorkspaceEdit();
+                    for (const e of edits) {
+                        edit.replace(doc.uri, new vscode.Range(doc.positionAt(e.offset), doc.positionAt(e.offset + e.length)), e.text);
+                    }
+                    if (await vscode.workspace.applyEdit(edit)) {
+                        await doc.save();
+                    }
+                    sendProject();
+                    break;
+                }
+                case 'reveal': {
+                    const start = document.positionAt(message.offset || 0);
+                    const end = document.positionAt(message.end ?? message.offset ?? 0);
+                    let editors = textEditors();
+                    if (!editors.length && message.focus) {
+                        await vscode.window.showTextDocument(document, { viewColumn: vscode.ViewColumn.Beside, preserveFocus: false });
+                        editors = textEditors();
+                    }
+                    revealing = true;
+                    try {
+                        for (const ed of editors) {
+                            ed.selection = new vscode.Selection(start, end);
+                            ed.revealRange(new vscode.Range(start, end), vscode.TextEditorRevealType.InCenterIfOutsideViewport);
                         }
+                        if (message.focus && editors[0]) {
+                            await vscode.window.showTextDocument(editors[0].document, { viewColumn: editors[0].viewColumn, preserveFocus: false });
+                        }
+                    } finally {
+                        setTimeout(() => { revealing = false; }, 50);
                     }
                     break;
                 }
+                case 'openFile': {
+                    const file = message.path || '';
+                    if (!file.startsWith(info.root + path.sep)) {
+                        break;
+                    }
+                    const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(file));
+                    const pos = doc.positionAt(message.offset || 0);
+                    await vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.Beside, selection: new vscode.Range(pos, pos) });
+                    break;
+                }
+                case 'openInDesigner': {
+                    const file = message.path || '';
+                    if (file.startsWith(info.root + path.sep) && file.endsWith('.razor')) {
+                        await vscode.commands.executeCommand('vscode.openWith', vscode.Uri.file(file), 'xamlDesigner.razorVisualEditor');
+                    }
+                    break;
+                }
+                case 'openSource':
+                    await vscode.window.showTextDocument(document, { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true });
+                    break;
+                case 'undo':
+                case 'redo':
+                    webviewPanel.reveal(undefined, false);
+                    await vscode.commands.executeCommand(message.type);
+                    break;
             }
         });
-    }
-
-    private async updateDocument(document: vscode.TextDocument, content: string): Promise<void> {
-        const edit = new vscode.WorkspaceEdit();
-        edit.replace(
-            document.uri,
-            new vscode.Range(0, 0, document.lineCount, 0),
-            content
-        );
-        try {
-            await vscode.workspace.applyEdit(edit);
-        } catch (error) {
-            vscode.window.showErrorMessage(`Failed to update document: ${error}`);
-        }
     }
 }
