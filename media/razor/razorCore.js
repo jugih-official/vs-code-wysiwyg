@@ -13,6 +13,28 @@
 
     var VOID = { area: 1, base: 1, br: 1, col: 1, embed: 1, hr: 1, img: 1, input: 1, link: 1, meta: 1, param: 1, source: 1, track: 1, wbr: 1 };
     var RAW_TEXT = { script: 1, style: 1, textarea: 0 };
+    // Plain HTML: these hold text, not markup.
+    var HTML_RAW_TEXT = { script: 1, style: 1, textarea: 1, title: 1, xmp: 1 };
+    var P_CLOSERS = {};
+    'address article aside blockquote details dialog div dl fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 header hgroup hr main menu nav ol p pre section table ul'.split(' ').forEach(function (n) { P_CLOSERS[n] = 1; });
+
+    /** HTML's optional end tags: does a <child> start tag end an open <parent>? */
+    function impliedEnd(parent, child) {
+        parent = parent.toLowerCase(); child = child.toLowerCase();
+        switch (parent) {
+            case 'p': return !!P_CLOSERS[child];
+            case 'li': return child === 'li';
+            case 'dt': case 'dd': return child === 'dt' || child === 'dd';
+            case 'option': return child === 'option' || child === 'optgroup';
+            case 'optgroup': return child === 'optgroup';
+            case 'tr': return child === 'tr' || child === 'tbody' || child === 'tfoot' || child === 'thead';
+            case 'td': case 'th': return child === 'td' || child === 'th' || child === 'tr' || child === 'tbody' || child === 'tfoot';
+            case 'thead': case 'tbody': return child === 'tbody' || child === 'tfoot';
+            case 'rt': case 'rp': return child === 'rt' || child === 'rp';
+            case 'head': return child === 'body';
+            default: return false;
+        }
+    }
     var DIRECTIVES = { page: 1, using: 1, inject: 1, implements: 1, inherits: 1, layout: 1, attribute: 1, namespace: 1, typeparam: 1, rendermode: 1, preservewhitespace: 1, model: 1, addTagHelper: 1, removeTagHelper: 1, tagHelperPrefix: 1, section: 0 };
     var BLOCK_KW = { 'if': 1, 'foreach': 1, 'for': 1, 'while': 1, 'switch': 1, 'do': 1, 'using': 1, 'lock': 1, 'try': 1 };
 
@@ -113,8 +135,11 @@
      *   switch { expr, cases: [{ label, children }] }, code { children } (an @{ } block), comment
      * Every node has start/end offsets and an id (index into result.nodes).
      */
-    function parseRazor(text) {
+    /** opts.html: plain HTML (no Razor; HTML's optional end tags, case-insensitive tags, lenient). */
+    function parseRazor(text, opts) {
         var t = text;
+        var html = !!(opts && opts.html);
+        var openStack = [];
         var res = { nodes: [], directives: [], codeBlocks: [], templates: {}, params: {}, root: null, text: text };
         function node(o) { o.id = res.nodes.length; res.nodes.push(o); return o; }
 
@@ -156,6 +181,13 @@
                         continue;
                     }
                     if (isIdStart(t[i + 1] || '')) {
+                        if (html && parentName) {
+                            var nm = /^<([\w:.\-]+)/.exec(t.substring(i, i + 64));
+                            if (nm && impliedEnd(parentName, nm[1])) {
+                                flushText(i);
+                                return { kids: kids, pos: i, implied: true };
+                            }
+                        }
                         flushText(i);
                         var el = parseElement(i, end);
                         kids.push(el);
@@ -166,7 +198,7 @@
                     i++;
                     continue;
                 }
-                if (c === '@') {
+                if (c === '@' && !html) {
                     if (t[i + 1] === '@') {
                         flushText(i);
                         kids.push(node({ type: 'text', text: '@', start: i, end: i + 2 }));
@@ -428,11 +460,16 @@
             for (;;) {
                 while (j < t.length && isWs(t[j])) j++;
                 if (j >= t.length) throw new RazorError('Unterminated tag <' + name, i);
-                if (t[j] === '/' && t[j + 1] === '>') { el.selfClosing = true; el.tagEnd = j + 2; el.closeStart = j; el.end = j + 2; return el; }
+                if (t[j] === '/' && t[j + 1] === '>') {
+                    // In HTML "/>" closes only void elements and SVG/MathML ones; <div/> opens a div.
+                    var foreign = openStack.indexOf('svg') >= 0 || openStack.indexOf('math') >= 0 || /^(svg|math)$/i.test(name);
+                    if (!html || foreign || VOID[name.toLowerCase()]) { el.selfClosing = true; el.tagEnd = j + 2; el.closeStart = j; el.end = j + 2; return el; }
+                    el.tagEnd = j + 2; j += 2; el.slashOpen = true; break;
+                }
                 if (t[j] === '>') { el.tagEnd = j + 1; j++; break; }
-                if (t[j] === '@' && t[j + 1] === '*') { j = skipCsToken(t, j); continue; }
+                if (!html && t[j] === '@' && t[j + 1] === '*') { j = skipCsToken(t, j); continue; }
                 var as = j;
-                if (t[j] === '@' && t[j + 1] === '(') {
+                if (!html && t[j] === '@' && t[j + 1] === '(') {
                     // @(...) as an attribute (rare): keep as a raw attribute
                     j = matchBalanced(t, j + 1, '(', ')');
                     el.attrs.push({ name: t.substring(as, j), raw: null, start: as, end: j, vStart: -1, vEnd: -1 });
@@ -453,8 +490,8 @@
                     j = ve + 1;
                 } else {
                     var vs = k;
-                    while (k < t.length && !isWs(t[k]) && t[k] !== '>' && !(t[k] === '/' && t[k + 1] === '>')) {
-                        if (t[k] === '(') { k = matchBalanced(t, k, '(', ')'); continue; }
+                    while (k < t.length && !isWs(t[k]) && t[k] !== '>' && (html || !(t[k] === '/' && t[k + 1] === '>'))) {
+                        if (!html && t[k] === '(') { k = matchBalanced(t, k, '(', ')'); continue; }
                         k++;
                     }
                     el.attrs.push({ name: an, raw: t.substring(vs, k), start: as, end: k, vStart: vs, vEnd: k, quote: '' });
@@ -462,39 +499,67 @@
                 }
             }
             var lname = name.toLowerCase();
-            if (VOID[lname] && name === lname) { el.end = el.tagEnd; el.closeStart = el.tagEnd; el.isVoid = true; return el; }
-            if (RAW_TEXT[lname] && name === lname) {
+            if (VOID[lname] && (html || name === lname)) { el.end = el.tagEnd; el.closeStart = el.tagEnd; el.isVoid = true; return el; }
+            if ((html ? HTML_RAW_TEXT[lname] : RAW_TEXT[lname] && name === lname)) {
                 var rc = t.toLowerCase().indexOf('</' + lname, j);
-                if (rc < 0) throw new RazorError('Unclosed <' + name + '>', i);
+                if (rc < 0) {
+                    if (!html) throw new RazorError('Unclosed <' + name + '>', i);
+                    rc = t.length;
+                }
                 el.rawContent = t.substring(j, rc);
                 el.closeStart = rc;
-                el.end = t.indexOf('>', rc) + 1;
+                el.end = rc < t.length ? t.indexOf('>', rc) + 1 : rc;
                 return el;
             }
-            var content = parseMarkupContent(j, end, name);
-            el.children = content.kids;
-            var p = content.pos;
-            if (p >= end || t[p] !== '<') {
-                throw new RazorError('Missing </' + name + '>', i);
+            openStack.push(lname);
+            try {
+                for (;;) {
+                    var content = parseMarkupContent(j, end, name);
+                    el.children = el.children.concat(content.kids);
+                    var p = content.pos;
+                    if (content.implied) {
+                        // HTML: a start tag that ends this element (<li> after <li>, a block after <p>).
+                        el.closeStart = p; el.end = p; el.unclosed = true;
+                        return el;
+                    }
+                    if (p >= end || t[p] !== '<') {
+                        if (!html) throw new RazorError('Missing </' + name + '>', i);
+                        el.closeStart = p; el.end = p; el.unclosed = true;
+                        return el;
+                    }
+                    var ge = t.indexOf('>', p);
+                    var closeName = t.substring(p + 2, ge < 0 ? t.length : ge).trim();
+                    var same = html ? closeName.toLowerCase() === lname : closeName === name;
+                    if (same) {
+                        el.closeStart = p;
+                        el.end = ge + 1;
+                        return el;
+                    }
+                    if (html && openStack.indexOf(closeName.toLowerCase()) < 0) {
+                        // A stray end tag that closes nothing open: browsers ignore it, and so do we.
+                        j = ge < 0 ? t.length : ge + 1;
+                        continue;
+                    }
+                    // HTML leniency: an unclosed element ends where its parent does.
+                    el.closeStart = p;
+                    el.end = p;
+                    el.unclosed = true;
+                    if (!closeName) throw new RazorError('Invalid end tag', p);
+                    return el;
+                }
+            } finally {
+                openStack.pop();
             }
-            var ge = t.indexOf('>', p);
-            var closeName = t.substring(p + 2, ge).trim();
-            if (closeName !== name) {
-                // HTML leniency: an unclosed element ends where its parent does.
-                el.closeStart = p;
-                el.end = p;
-                el.unclosed = true;
-                if (!closeName) throw new RazorError('Invalid end tag', p);
-                return el;
-            }
-            el.closeStart = p;
-            el.end = ge + 1;
-            return el;
         }
 
         // Attribute value: until the closing quote, skipping Razor expressions (which may contain the quote).
         function scanAttrValue(i, q) {
             var j = i;
+            if (html) {
+                var hq = t.indexOf(q, i);
+                if (hq < 0) throw new RazorError('Unterminated attribute value', i);
+                return hq;
+            }
             while (j < t.length) {
                 var c = t[j];
                 if (c === q) return j;
@@ -544,10 +609,17 @@
         }
 
         var top = parseMarkupContent(0, t.length, null);
+        var topKids = top.kids;
+        while (html && top.pos < t.length) {
+            // Stray end tags at the top level: skip them.
+            var gt = t.indexOf('>', top.pos);
+            top = parseMarkupContent(gt < 0 ? t.length : gt + 1, t.length, null);
+            topKids = topKids.concat(top.kids);
+        }
         if (top.pos < t.length) {
             throw new RazorError('Unexpected ' + t.substring(top.pos, t.indexOf('>', top.pos) + 1), top.pos);
         }
-        res.root = { type: 'root', children: top.kids, start: 0, end: t.length, id: -1 };
+        res.root = { type: 'root', children: topKids, start: 0, end: t.length, id: -1 };
         // Parent links
         (function link(n, parent) {
             n.parent = parent;
@@ -995,11 +1067,12 @@
 
         function renderElement(el, ctx) {
             var name = el.name;
-            if (name === 'text') return renderNodes(el.children, ctx);
+            if (name === 'text' && !opts.html) return renderNodes(el.children, ctx);
             var simple = name.indexOf('.') >= 0 ? name.substring(name.lastIndexOf('.') + 1) : name;
-            if (/^[A-Z]/.test(simple)) return renderComponent(el, simple, ctx);
+            if (!opts.html && /^[A-Z]/.test(simple)) return renderComponent(el, simple, ctx);
             var lname = name.toLowerCase();
             if (lname === 'script' || lname === 'base') return;
+            if (lname === 'meta' && el.attrs.some(function (a) { return a.name.toLowerCase() === 'http-equiv' && /refresh/i.test(a.raw || ''); })) return;
             var tag = name;
             var attrs = [];
             var rzId = ctx.fileIndex + ':' + el.id;

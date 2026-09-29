@@ -10,6 +10,7 @@ mkdir -p "$tmp/ds/src"
 cp "$src"/MainWindow.xaml "$src"/*.csproj "$src"/README.md "$tmp/ds/"
 cp -r "$src/Resources" "$tmp/ds/"
 rsync -a --exclude bin --exclude obj "$src/src/Distribution.Web" "$tmp/ds/src/"
+cp -r "$here/test/fixtures/site" "$tmp/ds/site"
 export DS_ROOT="$tmp/ds"
 export RESULT_FILE="${RESULT_FILE:-$tmp/result.json}"
 xvfb-run -a "${VSCODE_BIN:-/usr/share/code/code}" --extensionDevelopmentPath="$here" --extensionTestsPath="$here/test/integration" \

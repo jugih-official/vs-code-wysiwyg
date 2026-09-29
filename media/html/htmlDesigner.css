@@ -1,0 +1,55 @@
+/* HTML designer additions to the shared designer chrome (wpfDesigner.css, razorDesigner.css). */
+
+/* The toolbar wraps: the fixed-page mode has many tools. */
+.toolbar.wrap { flex-wrap: wrap; height: auto; min-height: 34px; padding: 3px 8px; row-gap: 2px; }
+.toolbar .tb-group { display: inline-flex; align-items: center; gap: 3px; }
+.toolbar .tb-label { opacity: .7; margin-left: 4px; }
+.toolbar button.icon { padding: 3px 5px; min-width: 0; }
+.toolbar button.icon svg { width: 16px; height: 16px; display: block; fill: currentColor; }
+.toolbar select, .vp-input { font: inherit; color: var(--vscode-input-foreground, #ccc); background: var(--vscode-input-background, #3c3c3c); border: 1px solid var(--vscode-input-border, #555); border-radius: 3px; padding: 2px 4px; }
+.vp-input.small { width: 48px; }
+.mode-badge { padding: 1px 8px; border-radius: 10px; background: rgba(0, 122, 204, .25); font-size: 11px; white-space: nowrap; }
+.mode-badge:empty { display: none; }
+
+/* Mode switches */
+body.mode-empty .doc-only, body.mode-empty .doc-only-flex { display: none !important; }
+body:not(.mode-hmi) .hmi-only { display: none !important; }
+body:not(.mode-flow) .flow-only { display: none !important; }
+
+/* Canvas aids */
+.grid-layer {
+    position: absolute; display: none; pointer-events: none;
+    background-image: radial-gradient(circle, rgba(0, 122, 204, .55) 0.8px, transparent 1.1px);
+    background-position: 0 0;
+}
+.guide { position: absolute; pointer-events: none; background: #ff2d95; box-shadow: 0 0 0 .5px rgba(255, 255, 255, .6); }
+.marquee { position: absolute; display: none; pointer-events: none; border: 1px dashed var(--vscode-focusBorder, #1e90ff); background: rgba(30, 144, 255, .08); }
+.scope-box { position: absolute; display: none; pointer-events: none; outline: 2px dashed rgba(255, 170, 0, .9); outline-offset: 2px; }
+.sel-box.sel-copy { outline-width: 1px; }
+.sel-box.locked { outline-style: dashed; }
+.sel-box.locked .handle { display: none; }
+.tree-row.locked .tree-kind::after { content: ' \1F512'; font-size: 10px; }
+.tree-text { margin-left: 6px; opacity: .55; font-style: italic; }
+
+/* Position fields: value and unit */
+.prop-input select.unit { flex: none; width: 52px; }
+
+/* Start screen for an empty file */
+.start-screen { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; background: var(--vscode-editor-background, #1e1e1e); }
+.start-screen[hidden] { display: none; }
+.start-screen h2 { margin: 0; font-weight: 600; }
+.start-cards { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
+.start-card {
+    width: 300px; display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 8px;
+    border: 1px solid var(--vscode-panel-border, #3c3c3c); background: var(--vscode-sideBar-background, #252526);
+}
+.start-card h3 { margin: 0; font-size: 14px; }
+.start-card p { margin: 0; opacity: .8; line-height: 1.45; }
+.start-card label { display: flex; flex-direction: column; gap: 4px; }
+.start-card select, .start-card input { font: inherit; color: var(--vscode-input-foreground, #ccc); background: var(--vscode-input-background, #3c3c3c); border: 1px solid var(--vscode-input-border, #555); border-radius: 3px; padding: 4px 6px; }
+.start-custom { display: none; align-items: center; gap: 6px; }
+.start-custom.show { display: flex; }
+.start-custom input { width: 90px; }
+.start-card button.primary { margin-top: auto; padding: 7px 10px; border: 0; border-radius: 4px; cursor: pointer; font: inherit; background: var(--vscode-button-background, #0e639c); color: var(--vscode-button-foreground, #fff); }
+.start-card button.primary:hover { background: var(--vscode-button-hoverBackground, #1177bb); }
+.prop-add button { white-space: nowrap; }

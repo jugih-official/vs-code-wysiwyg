@@ -675,13 +675,19 @@
             var p0 = parentOf(n0);
             if (p0 && p0.type !== 'root') s = { f: s.f, id: p0.id };
         }
+        // Pressing inside the selected element keeps it (a drag moves it); a click without dragging selects the inner one.
+        var drill = null;
+        if (!ev.altKey && !ev.ctrlKey && !ev.metaKey && sel && sel.f === s.f && sel.id !== s.id) {
+            var inner = project.files[s.f].parsed.nodes[s.id], outer = selNode();
+            if (inner && outer && outer.type === 'element' && isDescendant(inner, outer)) { drill = s; s = sel; }
+        }
         if (!sel || sel.f !== s.f || sel.id !== s.id) select(s);
         var n = selNode();
         if (editable(n) && n.type === 'element') {
             var dom = domsFor(sel)[0];
             var pos = dom && dom.ownerDocument.defaultView.getComputedStyle(dom).position;
-            drag = { mode: 'maybe', x: ev.clientX, y: ev.clientY, node: n, dom: dom, absolute: pos === 'absolute' || pos === 'fixed' };
-        }
+            drag = { mode: 'maybe', x: ev.clientX, y: ev.clientY, node: n, dom: dom, absolute: pos === 'absolute' || pos === 'fixed', drill: drill };
+        } else if (drill) drag = { mode: 'maybe', x: ev.clientX, y: ev.clientY, drill: drill };
     });
     selBox.addEventListener('mousedown', function (ev) {
         var h = ev.target.closest('.handle');
@@ -736,6 +742,7 @@
         var d = drag;
         drag = null;
         hideDrop();
+        if (d.mode === 'maybe' && d.drill) { select(d.drill); return; }
         if (d.mode === 'moveAbs' && (d.dx || d.dy)) {
             var cs = d.dom.ownerDocument.defaultView.getComputedStyle(d.dom);
             d.dom.style.translate = '';

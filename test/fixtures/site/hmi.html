@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HMI page</title>
+    <style>
+        html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+        body { position: relative; background: #1e1e1e; }
+        .hmi-page { position: absolute; left: 0; top: 0; overflow: hidden; transform-origin: 0 0; background: #ffffff; color: #1a1a1a; font-family: "Segoe UI", Arial, sans-serif; font-size: 16px; }
+        .hmi-page * { box-sizing: border-box; }
+    </style>
+</head>
+<body>
+    <div class="hmi-page" data-scale="fit" style="width: 1280px; height: 800px;">
+        <div style="position: absolute; left: 107px; top: 110px; width: 200px; height: 120px; background: #e8e8e8; border: 1px solid #9a9a9a;"></div>
+        <div style="position: absolute; left: 97px; top: 100px; width: 200px; height: 120px; background: #e8e8e8; border: 1px solid #9a9a9a;"></div>
+        <button type="button" style="position: absolute; left: 97px; top: 100px; width: 140px; height: 44px;">Start</button>
+    </div>
+    <script data-hmi-scale>
+        // Scales the fixed-size page to the browser window. data-scale: fit | width | height | fill | none.
+        (function () {
+            function scale() {
+                var pages = document.querySelectorAll(".hmi-page"), body = document.body, root = document.documentElement;
+                for (var i = 0; i < pages.length; i++) {
+                    var p = pages[i], mode = p.getAttribute("data-scale") || "fit";
+                    p.style.transform = "none";
+                    var w = p.offsetWidth, h = p.offsetHeight;
+                    body.style.overflowX = mode === "height" || mode === "none" ? "auto" : "hidden";
+                    body.style.overflowY = mode === "width" || mode === "none" ? "auto" : "hidden";
+                    var vw = root.clientWidth, vh = root.clientHeight;
+                    var sx = vw / w, sy = vh / h, x = 0, y = 0;
+                    if (mode === "none") sx = sy = 1;
+                    else if (mode === "width") sy = sx;
+                    else if (mode === "height") sx = sy;
+                    else if (mode === "fit") { sx = sy = Math.min(sx, sy); x = (vw - w * sx) / 2; y = (vh - h * sy) / 2; }
+                    p.style.transform = "translate(" + x + "px," + y + "px) scale(" + sx + "," + sy + ")";
+                }
+            }
+            window.addEventListener("resize", scale);
+            scale();
+        })();
+    </script>
+</body>
+</html>

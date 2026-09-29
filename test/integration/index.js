@@ -129,6 +129,49 @@ async function run() {
         return tab.label;
     });
 
+    // HTML designer: a flow page (its linked stylesheet must apply in the frame) and a fixed page.
+    const flowHtml = path.join(DS, 'site/index.html');
+    const hmiHtml = path.join(DS, 'site/hmi.html');
+    await check('HTML designer renders a flow page with its linked stylesheet and images', async () => {
+        await vscode.commands.executeCommand('vscode.openWith', vscode.Uri.file(flowHtml), 'xamlDesigner.htmlVisualEditor');
+        const m = await waitFor(x => x.designer === 'html' && x.file === flowHtml && x.message.type === 'rendered', 'html rendered');
+        if (m.message.mode !== 'flow') throw new Error('mode ' + m.message.mode);
+        // site.css sets .intro { font-size: 18px }.
+        if (m.message.probe !== '18px') throw new Error('linked stylesheet not applied: ' + JSON.stringify(m.message));
+        if (m.message.images !== 1 || m.message.imagesLoaded !== 1) throw new Error('image not loaded: ' + JSON.stringify(m.message));
+        return m.message;
+    });
+    await check('HTML designer shows a fixed page at its resolution', async () => {
+        await vscode.commands.executeCommand('vscode.openWith', vscode.Uri.file(hmiHtml), 'xamlDesigner.htmlVisualEditor');
+        const m = await waitFor(x => x.designer === 'html' && x.file === hmiHtml && x.message.type === 'rendered', 'hmi rendered');
+        if (m.message.mode !== 'hmi' || !m.message.page || m.message.page.w !== 1280 || m.message.page.h !== 800) throw new Error(JSON.stringify(m.message));
+        return m.message;
+    });
+    await check('HTML edit moves an element by changing only its style', async () => {
+        const doc = await vscode.workspace.openTextDocument(hmiHtml);
+        const before = doc.getText();
+        const at = before.indexOf('left: 107px') + 'left: '.length;
+        await api.simulateDesignerMessage('html', hmiHtml, { type: 'edit', version: doc.version, edits: [{ offset: at, length: 5, text: '120px' }] });
+        if (doc.getText() !== before.slice(0, at) + '120px' + before.slice(at + 5)) throw new Error('unexpected text');
+        await api.simulateDesignerMessage('html', hmiHtml, { type: 'undo' });
+        await new Promise(r => setTimeout(r, 500));
+        if (doc.getText() !== before) throw new Error('undo did not restore the text');
+        return 'edited, then undone';
+    });
+    await check('CSS edit for a linked stylesheet is saved; other files are refused', async () => {
+        const css = path.join(DS, 'site/site.css');
+        const t = fs.readFileSync(css, 'utf8');
+        const at = t.indexOf('18px');
+        await api.simulateDesignerMessage('html', flowHtml, { type: 'editFile', path: css, edits: [{ offset: at, length: 4, text: '20px', expect: '18px' }] });
+        await new Promise(r => setTimeout(r, 500));
+        if (fs.readFileSync(css, 'utf8') !== t.slice(0, at) + '20px' + t.slice(at + 4)) throw new Error('site.css not written');
+        const other = path.join(DS, 'README.md');
+        const o = fs.readFileSync(other, 'utf8');
+        await api.simulateDesignerMessage('html', flowHtml, { type: 'editFile', path: other, edits: [{ offset: 0, length: 0, text: 'X', expect: '' }] });
+        if (fs.readFileSync(other, 'utf8') !== o) throw new Error('a file that is not a linked stylesheet was changed');
+        return 'saved; refused';
+    });
+
     if (LIVE_URL) {
         await check('Live view connects to the running app through the proxy', async () => {
             await vscode.commands.executeCommand('vscode.openWith', vscode.Uri.file(logRazor), 'xamlDesigner.razorVisualEditor');

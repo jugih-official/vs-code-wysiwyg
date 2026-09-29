@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Turku PET Centre — Cyclotron</title>
+    <link rel="stylesheet" href="site.css">
+    <style>
+        body { font-family: sans-serif; margin: 0; color: #222; }
+        header { background: #0b3d91; color: #fff; padding: 16px 32px; }
+        .cards { display: flex; gap: 16px; padding: 24px 32px; }
+        .card { flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 16px; }
+    </style>
+</head>
+<body>
+    <!-- Site header -->
+    <header>
+        <h1>Cyclotron status</h1>
+        <nav><a href="index.html">Home</a> · <a href="contact.html">Contact</a></nav>
+    </header>
+    <main>
+        <p class="intro" data-probe="font-size">Production runs <strong>every weekday</strong> from 6:00.</p>
+        <section class="cards">
+            <div class="card"><h2>CC-18</h2><p>F-18 production</p></div>
+            <div class="card" style="background: #f5f9ff;"><h2>TR-19</h2><p>C-11 and F-18</p></div>
+        </section>
+        <figure><img src="plant.png" alt="Plant" width="320"><figcaption>The plant</figcaption></figure>
+    </main>
+    <footer><small>© 2026</small></footer>
+    <script src="site.js"></script>
+</body>
+</html>

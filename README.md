@@ -57,8 +57,6 @@ See the LICENSE file for full terms.
    - [Properties Panel — XAML](#properties-panel--xaml)
 9. [Razor Designer](#razor-designer)
 10. [HTML Designer](#html-designer)
-   - [Available Elements](#html-available-elements)
-   - [Properties Panel — HTML](#properties-panel--html)
 11. [Vue Designer](#vue-designer)
     - [Available Elements](#vue-available-elements)
     - [Properties Panel — Vue](#properties-panel--vue)
@@ -505,44 +503,36 @@ When a XAML control is selected, the following fields are available in the Prope
 
 ## HTML Designer
 
-The HTML designer generates standard HTML5 markup (`.html` / `.htm`).
+`.html` / `.htm` files open in a designer that draws the page with its own stylesheets and images, and edits the file in place without rewriting it. It has two modes; the page itself decides which one applies.
 
-### HTML Available Elements
+**Empty file:** a start screen creates either kind of page. For a fixed page you pick the resolution (Full HD, HD, 1366×768, a 1280×800 or 800×480 panel, 4K, portrait sizes, or any custom size) and the scale mode.
 
-#### Structure
+### Fixed page (HMI)
 
-`div`, `span`, `p`, `h1`–`h6`, `a`, `hr`, `br`, `blockquote`, `pre`, `code`
+Works like the TwinCAT HMI editor: a page of a set resolution where everything stays exactly where you place it, and the whole page scales to the browser window.
 
-#### Forms
+- The page is a `<div class="hmi-page" data-scale="fit" style="width: 1280px; height: 800px;">`; its elements are placed with `position: absolute` and left/top/width/height. A small script in the page scales it in the browser. **Scale modes:** *Fit* (whole page, centred, like ScaleToFit), *Fit width* (scroll vertically), *Fit height* (scroll horizontally), *Stretch to fill*, and *No scaling*. The file stays plain HTML that works in any browser without the extension.
+- **Resolution** and **scale mode** are in the toolbar and the page properties. **Window** previews the page in a window of another size, scaled the way the browser will scale it.
+- **Placing:** drag controls from the toolbox (text, heading, button, image, rectangle, ellipse, line, group box, text box, checkbox, drop-down, link, table); they land where you drop them, on the grid.
+- **Moving and resizing** snap to the page edges and centre, to the edges and centres of other elements (with pink guide lines), and to the grid (size adjustable; Alt moves freely). Shift keeps a move straight or a corner resize proportional; Ctrl+drag copies; arrow keys nudge by 1 px (Shift: 10).
+- **Selecting:** click; Ctrl/Shift+click adds; drag on empty space for a marquee (Alt: only fully enclosed elements); Ctrl+A selects all.
+- **Arranging:** align left/centre/right/top/middle/bottom (to the first selected), same width/height, distribute evenly, bring to front / send to back, group (Ctrl+G) and ungroup (Ctrl+Shift+G) keeping everything in place, lock (Ctrl+L). Double-click a group to work inside it; Esc goes back.
+- **Position properties** like TwinCAT: left, top, right, bottom, width and height, each in px or % (switching converts the value). Right and bottom anchor an element to the far edge; left and right together stretch it. Also rotation, and a vertical text alignment.
+- Double-click text (or F2) to edit it in place. Ctrl+C / Ctrl+V / Ctrl+X, Ctrl+D duplicates.
 
-`input`, `textarea`, `select`, `button`, `label`, `form`, `fieldset`, `legend`, `output`, `meter`, `progress`, `datalist`
+### Flow page
 
-#### Media
+A normal web page: content flows with the window width. Nothing is ever converted to absolute positioning.
 
-`img`, `video`, `audio`, `canvas`, `svg`, `iframe`, `picture`, `source`, `figure`, `figcaption`
+- Drag an element to reorder it: the middle of a target puts it inside, its edges before or after. Alt+↑/↓ move it among its siblings. Pressing inside the selected element drags it; a click without dragging selects the inner element. Alt+click selects the parent.
+- Viewport presets (1920×1080 down to phone size) show how the page reflows.
 
-#### Lists & Tables
+### Both modes
 
-`ul`, `ol`, `li`, `dl`, `dt`, `dd`, `table`, `thead`, `tbody`, `tfoot`, `tr`, `th`, `td`, `caption`, `colgroup`, `col`
-
-#### Semantic / Layout
-
-`nav`, `header`, `footer`, `section`, `article`, `aside`, `main`, `details`, `summary`, `dialog`, `template`, `slot`
-
-### Properties Panel — HTML
-
-| Property | Attribute | Description |
-|----------|-----------|-------------|
-| id | `id` | Element identifier |
-| class | `class` | CSS class(es) |
-| X | `style: left` | Horizontal position |
-| Y | `style: top` | Vertical position |
-| Width | `style: width` | Element width |
-| Height | `style: height` | Element height |
-| type | `type` | Input / button type |
-| Custom attributes | Any | Any standard HTML attribute |
-
----
+- Every change is a minimal text edit, applied through VS Code: comments, scripts and formatting you do not touch stay exactly as they are. Undo and redo use the normal editor history.
+- The properties panel edits text, classes, inline style properties (with the computed value as a hint), and attributes.
+- **CSS rules:** the rules that apply to the selected element are listed, from linked stylesheets and from the page's `<style>` blocks. Editing a value or adding a declaration changes that stylesheet (saved) or the `<style>` block.
+- Outline tree with search, outlines of every element, zoom and pan, cursor sync with the text editor, and **Preview** (saves and opens the page in the browser).
 
 ## Vue Designer
 
@@ -772,14 +762,14 @@ vs-code-wysiwyg/
 │   ├── extension.ts              # Extension entry point — registers all custom editors and commands
 │   ├── xamlDesignerProvider.ts   # CustomTextEditorProvider for .xaml / .axaml
 │   ├── razorDesignerProvider.ts  # CustomTextEditorProvider for .razor
-│   ├── htmlDesignerProvider.ts   # CustomTextEditorProvider for .html / .htm
+│   ├── htmlDesignerProvider.ts   # CustomTextEditorProvider for .html / .htm (linked stylesheets, preview in the browser)
+│   ├── htmlDesignerHtml.ts       # Webview page for the HTML designer
 │   ├── vueDesignerProvider.ts    # CustomTextEditorProvider for .vue
 │   ├── reactDesignerProvider.ts  # CustomTextEditorProvider for .jsx / .tsx
 │   ├── htmlPreviewProvider.ts    # HTML live preview panel provider
 │   ├── previewProvider.ts        # Unified preview provider for XAML/AXAML, Razor, and HTML files
 │   ├── xamlDocument.ts           # XAML document model / parser helpers
 │   ├── webviewContent.ts         # Webview HTML + embedded JS for the XAML designer
-│   ├── htmlWebviewContent.ts     # Webview HTML + embedded JS for the HTML designer
 │   ├── vueWebviewContent.ts      # Webview HTML + embedded JS for the Vue designer
 │   ├── reactWebviewContent.ts    # Webview HTML + embedded JS for the React designer
 │   ├── razorDesignerHtml.ts      # Webview page for the Razor designer
@@ -788,6 +778,9 @@ vs-code-wysiwyg/
 │   ├── designerEvents.ts         # Designer webview messages, for the integration tests
 │   ├── wpfDesignerHtml.ts        # Webview page for the WPF designer
 │   └── wpfImages.ts              # Image path resolution and DPI-aware sizes for the WPF designer
+├── media/html/
+│   ├── htmlDesigner.js           # HTML designer UI: fixed-page (HMI) and flow modes, snapping, alignment, grouping, properties
+│   └── htmlDesigner.css          # HTML designer additions to the shared chrome
 ├── media/razor/
 │   ├── razorCore.js              # Razor parser with source offsets, design-time C# evaluation, renderer, CSS isolation and rule parsing, text edits
 │   ├── razorDesigner.js          # Razor designer UI: preview frame, selection, reorder/resize, properties and CSS rules, state, toolbox, drawn XAML, live view
@@ -801,6 +794,7 @@ vs-code-wysiwyg/
 │   └── fonts/                    # Selawik and Carlito (SIL OFL) as Segoe UI / Calibri stand-ins
 ├── test/
 │   ├── integration/index.js      # Integration tests in a real VS Code (designers render, edits, CSS rule edits, live view)
+│   ├── fixtures/site/            # Test pages for the HTML designer (a flow page with a linked stylesheet, a fixed page)
 │   └── run-integration.sh        # Runs them headless on a copy of distribution_system: LIVE_URL=http://localhost:5091 test/run-integration.sh
 ├── out/                          # Compiled JavaScript output (generated by tsc)
 ├── package.json                  # Extension manifest, scripts, and dependencies
