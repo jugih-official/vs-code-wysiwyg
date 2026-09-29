@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { designerMessage, registerDesignerHandler } from './designerEvents';
 import { XamlDocument } from './xamlDocument';
 import { getWebviewContent } from './webviewContent';
 import { getWpfDesignerHtml } from './wpfDesignerHtml';
@@ -217,7 +218,8 @@ export class XamlDesignerProvider implements vscode.CustomTextEditorProvider {
             subscriptions.forEach(s => s.dispose());
         });
 
-        webviewPanel.webview.onDidReceiveMessage(async (message: WpfMessage) => {
+        const onMessage = async (message: WpfMessage) => {
+            designerMessage('wpf', document.uri.fsPath, message);
             switch (message.type) {
                 case 'ready':
                     sendDocument();
@@ -274,7 +276,10 @@ export class XamlDesignerProvider implements vscode.CustomTextEditorProvider {
                     await vscode.commands.executeCommand(message.type);
                     break;
             }
-        });
+        };
+        webviewPanel.webview.onDidReceiveMessage(onMessage);
+        const testHandler = registerDesignerHandler('wpf', document.uri.fsPath, onMessage);
+        webviewPanel.onDidDispose(() => testHandler.dispose());
     }
 
     private async updateDocument(document: vscode.TextDocument, content: string): Promise<void> {

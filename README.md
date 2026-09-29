@@ -487,6 +487,11 @@ When a XAML control is selected, the following fields are available in the Prope
 - Razor code runs at design time as far as it can: literals, parameters and simple fields are evaluated. Every condition that needs the running app (`@if`, `?:`, `switch`) becomes a toggle on the **State** tab, shared across components, so you can see each state (for example `Modern` on and off). Loops repeat their body a set number of times, and other `@expressions` show as named placeholders.
 - Viewport presets (1920×1080 down to phone size) or a custom size; zoom and pan.
 
+**Content that only exists when the app runs**
+- **Sample text:** select an `@expression` (in the Outline, or Ctrl+click it on the page) and type what it should show, e.g. `v3.0.2` for `@VersionText`, so text takes its real width. Samples, like the State toggles, are kept for your workspace and never written to the file.
+- **Drawn XAML:** markup that C# code builds at run time can be drawn from the XAML it comes from. If the project references `.xaml` files (for example a WPF window its Blazor app renders), an expression such as `@RenderDock` can show a chosen element of that XAML (the window content, or a named element such as a tab's grid), drawn with the WPF designer's renderer and optionally scaled to fit like a Viewbox. For expressions named `Render…` the designer offers this in one click. Double-click the drawn XAML to open that element in the WPF designer.
+- **Live view:** the **Live** button shows the running app instead of the design view, with its real data and its code-built content. The extension puts a local proxy in front of the app that adds a small script to its pages; the app itself is not changed. Clicking an element on the live page selects the Razor element it comes from (matched by tag, classes and attributes; elements built by code select their nearest Razor ancestor), and the properties panel, CSS rules, Delete, Duplicate and Alt+↑/↓ work as usual. Edits go to the `.razor` file; with `dotnet watch` running (**Start app** opens it in a terminal) the page updates by itself through hot reload. **Use app** lets clicks through to the app, for example to open a dialog; **Select** switches back. The address defaults to the project's `launchSettings.json`. The command **Razor Designer: Toggle Live View** does the same from the Command Palette.
+
 **Editing**
 - Every change is a minimal text edit, applied through VS Code: code, comments and formatting you do not touch stay exactly as they are. Undo and redo use the normal editor history.
 - Drag an element to reorder it: the middle of a target puts it inside, the edges before or after. Alt+↑/↓ also move it among its siblings. Absolutely positioned elements move by `left`/`top`; handles resize by writing `width`/`height` to the inline style.
@@ -778,12 +783,15 @@ vs-code-wysiwyg/
 │   ├── vueWebviewContent.ts      # Webview HTML + embedded JS for the Vue designer
 │   ├── reactWebviewContent.ts    # Webview HTML + embedded JS for the React designer
 │   ├── razorDesignerHtml.ts      # Webview page for the Razor designer
-│   ├── razorProject.ts           # Finds a Blazor project's components, .razor.css files, stylesheets and layout
+│   ├── razorProject.ts           # Finds a Blazor project's components, .razor.css files, stylesheets, layout, linked XAML and launch URL
+│   ├── liveProxy.ts              # Local proxy for the Razor designer's live view (HTTP and WebSocket, adds the agent script)
+│   ├── designerEvents.ts         # Designer webview messages, for the integration tests
 │   ├── wpfDesignerHtml.ts        # Webview page for the WPF designer
 │   └── wpfImages.ts              # Image path resolution and DPI-aware sizes for the WPF designer
 ├── media/razor/
 │   ├── razorCore.js              # Razor parser with source offsets, design-time C# evaluation, renderer, CSS isolation and rule parsing, text edits
-│   ├── razorDesigner.js          # Razor designer UI: preview frame, selection, reorder/resize, properties and CSS rules, state, toolbox
+│   ├── razorDesigner.js          # Razor designer UI: preview frame, selection, reorder/resize, properties and CSS rules, state, toolbox, drawn XAML, live view
+│   ├── liveAgent.js              # Script the live-view proxy adds to the app's pages: reports elements to the designer
 │   └── razorDesigner.css         # Razor designer additions to the shared chrome
 ├── media/wpf/
 │   ├── wpfCore.js                # XAML parser with source offsets, WPF styles/triggers/bindings, WPF→HTML renderer, text edits
@@ -791,6 +799,9 @@ vs-code-wysiwyg/
 │   ├── wpfRender.css             # WPF (Aero2) look in CSS
 │   ├── wpfDesigner.css           # Designer chrome, follows the VS Code theme
 │   └── fonts/                    # Selawik and Carlito (SIL OFL) as Segoe UI / Calibri stand-ins
+├── test/
+│   ├── integration/index.js      # Integration tests in a real VS Code (designers render, edits, CSS rule edits, live view)
+│   └── run-integration.sh        # Runs them headless on a copy of distribution_system: LIVE_URL=http://localhost:5091 test/run-integration.sh
 ├── out/                          # Compiled JavaScript output (generated by tsc)
 ├── package.json                  # Extension manifest, scripts, and dependencies
 ├── tsconfig.json                 # TypeScript compiler configuration

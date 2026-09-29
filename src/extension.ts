@@ -6,6 +6,7 @@ import { VueDesignerProvider } from './vueDesignerProvider';
 import { ReactDesignerProvider } from './reactDesignerProvider';
 import { HtmlPreviewProvider } from './htmlPreviewProvider';
 import { PreviewProvider } from './previewProvider';
+import { onDesignerMessage, simulateDesignerMessage } from './designerEvents';
 
 export function activate(context: vscode.ExtensionContext) {
     const xamlProvider = new XamlDesignerProvider(context);
@@ -166,6 +167,18 @@ export function activate(context: vscode.ExtensionContext) {
             }
         })
     );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('xamlDesigner.razorLiveView', (url?: string) => razorProvider.toggleLive(typeof url === 'string' ? url : undefined))
+    );
+
+    return {
+        onDesignerMessage,
+        /** For the integration tests: act as a designer webview. */
+        simulateDesignerMessage,
+        /** For the integration tests: preset the design-time state of a .razor file. */
+        setRazorDesignState: (file: string, state: unknown) => context.workspaceState.update('razorDesign:' + file, state),
+    };
 }
 
 export function deactivate() {}

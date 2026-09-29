@@ -1532,6 +1532,7 @@
     };
 
     function formatString(f, value) {
+        if (f.indexOf('{}') === 0) f = f.substring(2); // XAML escape for a value that starts with {
         if (f.indexOf('{') < 0) return value;
         return f.replace(/\{\{/g, '\u0001').replace(/\}\}/g, '\u0002').replace(/\{0(?:,[^:}]*)?(?::[^}]*)?\}/g, value).replace(/\u0001/g, '{').replace(/\u0002/g, '}');
     }
@@ -2059,6 +2060,13 @@
         return r.out.join('');
     }
 
+    /** HTML of one element of a model (for drawing a part of a XAML file elsewhere), laid out as a grid cell. */
+    function renderElementHtml(model, el, ctx) {
+        var r = new Renderer(model, ctx);
+        r.render(el, { kind: 'cell' });
+        return r.out.join('');
+    }
+
     // =====================================================================================
     // Source edits: every change touches only the characters it must.
     // =====================================================================================
@@ -2178,6 +2186,7 @@
         num: num,
         fmt: fmt,
         renderModel: renderModel,
+        renderElementHtml: renderElementHtml,
         setAttrEdit: setAttrEdit,
         deleteElementEdit: deleteElementEdit,
         insertChildEdit: insertChildEdit,

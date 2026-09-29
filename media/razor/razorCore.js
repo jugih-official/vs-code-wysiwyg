@@ -923,14 +923,28 @@
             }
             if (name && (name === 'ChildContent' || name === 'Body') && ctx.childContent) return ctx.childContent();
             if (name && ctx.fragments && ctx.fragments[name]) return ctx.fragments[name]();
+            var rzx = ctx.fileIndex + ':' + n.id;
+            // Design-time content for code the designer cannot run: a drawn XAML element, or sample text.
+            if (opts.fragment) {
+                var fr = opts.fragment(norm(code), ctx.file, n);
+                if (fr !== null && fr !== undefined) {
+                    out.push('<div class="rz-frag" data-rzx="' + rzx + '"' + (fr.fit ? ' data-fit="viewbox"' : '') + '>' + fr.html + '</div>');
+                    return;
+                }
+            }
             var v = evalCs(code, ctx.env);
+            var samples = state.samples || {};
+            if (v && v.unknown && samples.hasOwnProperty(norm(code))) {
+                out.push('<span class="rz-ph rz-sample" data-rzx="' + rzx + '" title="@' + esc(code) + '">' + esc(samples[norm(code)]) + '</span>');
+                return;
+            }
             if (v && v.unknown) {
                 if (!state.placeholders) return;
                 var label = (v.atom || code).replace(/^\(\w+\)\s*/, '');
                 var last = label.split(/[.(\[]/).filter(Boolean);
                 var shown = /^\w+$/.test(label) ? label : (last.length ? last[last.length === 1 ? 0 : last.length - 1] : label);
                 if (/\(\)$/.test(label) || /\(/.test(label)) shown = label.replace(/\(.*$/, '').split('.').pop();
-                out.push('<span class="rz-ph" data-rzx="' + ctx.fileIndex + ':' + n.id + '" title="@' + esc(code) + '">' + esc(shown) + '</span>');
+                out.push('<span class="rz-ph" data-rzx="' + rzx + '" title="@' + esc(code) + '">' + esc(shown) + '</span>');
                 return;
             }
             if (v === null || v === undefined) return;

@@ -119,6 +119,8 @@
         renderTree();
         renderProps();
         statusEl.textContent = model.all.length + ' elements · rendered in ' + Math.round(performance.now() - t0) + ' ms';
+        vscode.postMessage({ type: 'rendered', elements: model.all.length, html: html.length, images: surface.querySelectorAll('img').length });
+        reportImages(surface.querySelectorAll('img'));
     }
 
     // Layout that depends on measured sizes: Viewbox scaling and Stretch on geometry.
@@ -150,6 +152,16 @@
                 }
             } catch (e) { /* not rendered */ }
         }
+    }
+
+    /** Tells the extension how many images loaded (for its tests; missing images show as hatched boxes). */
+    var imageReport = 0;
+    function reportImages(list) {
+        var seq = ++imageReport, imgs = Array.prototype.slice.call(list).filter(function (i) { return i.getAttribute('src'); });
+        Promise.all(imgs.map(function (img) { return img.complete ? null : new Promise(function (r) { img.addEventListener('load', r); img.addEventListener('error', r); }); })).then(function () {
+            if (seq !== imageReport) return;
+            vscode.postMessage({ type: 'imagesLoaded', total: imgs.length, loaded: imgs.filter(function (i) { return i.naturalWidth > 0; }).length });
+        });
     }
 
     function naturalSize() {

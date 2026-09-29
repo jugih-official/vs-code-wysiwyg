@@ -21,8 +21,19 @@ export interface StylesheetInfo {
     scopedBundle?: boolean;
 }
 
+export interface LinkedXaml {
+    path: string;
+    name: string;
+}
+
 export interface RazorProjectInfo {
     root: string;
+    /** The .csproj of the project (for dotnet watch). */
+    csproj: string | null;
+    /** XAML files the project references (e.g. a WPF window it renders at run time) or contains. */
+    xaml: LinkedXaml[];
+    /** The app's development URL from Properties/launchSettings.json. */
+    launchUrl: string | null;
     files: RazorFileInfo[];
     stylesheets: StylesheetInfo[];
     baseUri: string;
@@ -154,11 +165,51 @@ export function collectRazorProject(razorPath: string, webview: vscode.Webview):
     if (!stylesheets.some(s => s.scopedBundle) && files.some(f => f.css !== null)) {
         stylesheets.push({ href: 'scoped', path: null, text: null, scopedBundle: true });
     }
+    const csprojName = fs.readdirSync(root).find(f => f.endsWith('.csproj'));
+    const csproj = csprojName ? path.join(root, csprojName) : null;
     return {
         root,
+        csproj,
+        xaml: linkedXaml(root, csproj),
+        launchUrl: launchUrl(root),
         files,
         stylesheets,
         baseUri: webview.asWebviewUri(vscode.Uri.file(baseDir)).toString() + '/',
         layoutName: findLayoutName(razorFiles),
     };
+}
+
+/** XAML files referenced by the .csproj (Content/None/Page Include="...xaml", links included) or inside the project. */
+export function linkedXaml(root: string, csproj: string | null): LinkedXaml[] {
+    const found = new Set<string>();
+    if (csproj) {
+        const text = readText(csproj) || '';
+        const re = /Include\s*=\s*"([^"]+\.a?xaml)"/gi;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(text))) {
+            const p = path.resolve(root, m[1].replace(/\\/g, '/'));
+            if (fs.existsSync(p)) {
+                found.add(p);
+            }
+        }
+    }
+    const local: string[] = [];
+    listFiles(root, '.xaml', local, 50);
+    local.forEach(p => found.add(p));
+    return Array.from(found).map(p => ({ path: p, name: path.basename(p) }));
+}
+
+/** The first http(s) applicationUrl of Properties/launchSettings.json (http preferred). */
+function launchUrl(root: string): string | null {
+    const text = readText(path.join(root, 'Properties', 'launchSettings.json'));
+    if (!text) {
+        return null;
+    }
+    const urls: string[] = [];
+    const re = /"applicationUrl"\s*:\s*"([^"]+)"/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text))) {
+        m[1].split(';').forEach(u => urls.push(u.trim()));
+    }
+    return urls.find(u => u.startsWith('http://')) || urls[0] || null;
 }

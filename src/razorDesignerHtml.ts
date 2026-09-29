@@ -12,7 +12,7 @@ export function getRazorDesignerHtml(webview: vscode.Webview, context: vscode.Ex
 <link rel="stylesheet" href="${media('wpf', 'wpfDesigner.css')}"/>
 <link rel="stylesheet" href="${media('razor', 'razorDesigner.css')}"/>
 </head>
-<body>
+<body data-wpf-css="${media('wpf', 'wpfRender.css')}">
 <div class="toolbar">
     <span class="title">Razor Designer</span>
     <button id="btnUndo" title="Undo (Ctrl+Z)">Undo</button>
@@ -42,6 +42,16 @@ export function getRazorDesignerHtml(webview: vscode.Webview, context: vscode.Ex
     <button id="btnFit" title="Fit the viewport in view (Ctrl+0)">Fit</button>
     <span class="separator"></span>
     <label class="toggle" title="Outline every element"><input type="checkbox" id="chkOutlines"/> Outlines</label>
+    <span class="separator"></span>
+    <button id="btnLive" class="live-toggle" title="Show the running app instead of the design view: real data, and edits appear through hot reload (dotnet watch)">Live</button>
+    <span id="liveBar" class="live-bar" hidden>
+        <input id="liveUrl" class="live-url" spellcheck="false" title="The app's address (http)"/>
+        <input id="livePath" class="live-path" spellcheck="false" title="Page path"/>
+        <button id="btnLiveGo" title="Connect">Go</button>
+        <button id="btnLiveReload" title="Reload the page">Reload</button>
+        <button id="btnLiveMode" title="Select elements, or use the app (clicks go to the app)">Select</button>
+        <button id="btnStartApp" title="Start the app with dotnet watch in a terminal">Start app</button>
+    </span>
     <button id="btnSource" title="Open the .razor source beside the designer">Source</button>
     <span id="status" class="status"></span>
 </div>
@@ -65,7 +75,7 @@ export function getRazorDesignerHtml(webview: vscode.Webview, context: vscode.Ex
     </div>
     <div class="splitter" data-side="left"></div>
     <div class="canvas-wrapper" id="canvasWrapper" tabindex="0">
-        <div class="stage" id="stage"><iframe id="frame" class="rz-frame" title="Page preview"></iframe></div>
+        <div class="stage" id="stage"><iframe id="frame" class="rz-frame" title="Page preview"></iframe><iframe id="liveFrame" class="rz-frame" title="Running app" hidden></iframe></div>
         <div class="glass" id="glass"></div>
         <div class="overlay" id="overlay">
             <div class="hover-box" id="hoverBox"></div>
@@ -80,6 +90,7 @@ export function getRazorDesignerHtml(webview: vscode.Webview, context: vscode.Ex
     </div>
 </div>
 <div class="statusbar"><span id="breadcrumb"></span><span id="coords"></span></div>
+<script src="${media('wpf', 'wpfCore.js')}"></script>
 <script src="${media('razor', 'razorCore.js')}"></script>
 <script src="${media('razor', 'razorDesigner.js')}"></script>
 </body>

@@ -37,3 +37,15 @@
 .chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 10px 4px; }
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border-radius: 10px; background: rgba(0,122,204,.2); font-family: var(--vscode-editor-font-family, monospace); }
 .chip button { background: none; border: 0; color: inherit; cursor: pointer; padding: 0; opacity: .7; }
+
+/* Live view */
+.live-toggle.on { background: var(--vscode-button-background, #0e639c) !important; color: var(--vscode-button-foreground, #fff); }
+.live-bar { display: inline-flex; align-items: center; gap: 4px; }
+.live-bar[hidden] { display: none; }
+.live-url, .live-path { font: inherit; color: var(--vscode-input-foreground, #ccc); background: var(--vscode-input-background, #3c3c3c); border: 1px solid var(--vscode-input-border, #555); border-radius: 3px; padding: 2px 5px; }
+.live-url { width: 170px; }
+.live-path { width: 90px; }
+.glass.passthrough { pointer-events: none; }
+.frag-row { display: flex; gap: 6px; align-items: center; padding: 2px 10px; }
+.frag-row select, .frag-row input[type=text] { flex: 1; min-width: 0; font: inherit; color: var(--vscode-input-foreground, #ccc); background: var(--vscode-input-background, #3c3c3c); border: 1px solid var(--vscode-input-border, #555); border-radius: 3px; padding: 3px 5px; }
+.frag-row label { width: 100px; flex: none; opacity: .85; }
